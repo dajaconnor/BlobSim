@@ -1,4 +1,5 @@
 ﻿using Assets.Enums;
+using Assets.Utils;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -7,8 +8,7 @@ public class BlobBehavior : MonoBehaviour
     public GameObject ground;
     public PerceptionBehavior perception;
     public GameObject blobPrefab;
-
-    float geneticDrift = 0.1f;
+    public Material material;
 
     // Things that evolve
     internal float size = 1;
@@ -26,12 +26,13 @@ public class BlobBehavior : MonoBehaviour
     internal float useMemoryPercent = 0.25f;
     internal int generation = 0;
     internal float childGenderRatio = 0.5f;
+    internal float aggression = 10f;
     public GenderType gender = GenderType.Male;
 
     // Dependent on size
-    float rotationSpeed = 10;
+    internal float rotationSpeed = 10;
 
-    int incubatedEnergy = 0;
+    internal int incubatedEnergy = 0;
     bool die = false;
     internal float currentSpeed = 4;
 
@@ -45,12 +46,13 @@ public class BlobBehavior : MonoBehaviour
     BlobBehavior predator;
     BlobBehavior prey;
     BlobBehavior parent;
+    BlobBehavior rival;
     public BlobBehavior partner;
 
-    int currentIncubation = 0;
+    internal int currentIncubation = 0;
     float predationLimit = 2f;
     Vector3 randomTarget;
-    private static float yConstant = 0.47f;
+
 
     // stats
     internal int fruitEaten = 0;
@@ -61,10 +63,11 @@ public class BlobBehavior : MonoBehaviour
     internal long ticksLived = 0;
     private bool updatedForBirth = false;
 
-    private int latestPlace = 0;
-    Vector2[] places = new Vector2[6];
+    internal int latestPlace = 0;
+    internal Vector2[] places = new Vector2[6];
+    internal Statistics stats;
 
-    void Start()
+    internal void Start()
     {
         fruitEaten = 0;
         blobsEaten = 0;
@@ -72,12 +75,14 @@ public class BlobBehavior : MonoBehaviour
         energyFromBlobs = 0;
         children = 0;
         ticksLived = 0;
+        stats = ground.GetComponent<Statistics>();
 
+        if (generation < 2) partner = this;
 
         if (!updatedForBirth)
         {
             updatedForBirth = true;
-            UpdateCurrentStatisticsForBirth();
+            stats.UpdateCurrentStatisticsForBirth(this);
         }
     }
 
@@ -88,7 +93,7 @@ public class BlobBehavior : MonoBehaviour
 
         if (ShouldDie())
         {
-            UpdateCurrentStatisticsForDeath();
+            stats.UpdateCurrentStatisticsForDeath(this);
             Destroy(this.gameObject);
             Destroy(this);
             return;
@@ -108,6 +113,12 @@ public class BlobBehavior : MonoBehaviour
         if (predator != null)
         {
             RunAway();
+            return;
+        }
+
+        if (rival != null)
+        {
+            FightRival();
             return;
         }
 
@@ -135,6 +146,18 @@ public class BlobBehavior : MonoBehaviour
         HeadToTarget(target.transform.position);
     }
 
+    private void FightRival()
+    {
+        var targetPosition = rival.transform.position;
+        //targetPosition.y = ReproductionUtil.yConstant;
+        var direction = (targetPosition - transform.position).normalized;
+        direction.y = 0;
+        var lookRotation = Quaternion.LookRotation(direction);
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed * aggression);
+
+        MoveForward();
+    }
+
     void OnMouseDown()
     {
         Camera.main.GetComponent<CameraBehavior>().target = this;
@@ -142,12 +165,12 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldReproduce()
     {
-        return gender.Equals(GenderType.Female) && energy > reproductionLimit || currentIncubation > 0 && partner != null;
+        return gender.Equals(GenderType.Female) && (energy > reproductionLimit || currentIncubation > 0) && partner != null;
     }
 
     private void FixHeightBug()
     {
-        transform.position = new Vector3(transform.position.x, yConstant, transform.position.z);
+        transform.position = new Vector3(transform.position.x, ReproductionUtil.yConstant, transform.position.z);
     }
 
     private bool ShouldDie()
@@ -165,7 +188,7 @@ public class BlobBehavior : MonoBehaviour
         if (!LeaveEdge())
         {
             var targetPosition = predator.transform.position;
-            targetPosition.y = yConstant;
+            targetPosition.y = -transform.position.y;
             var lookRotation = Quaternion.LookRotation(-targetPosition);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed * Random.Range(0.1f, 1.2f));
         }
@@ -175,7 +198,7 @@ public class BlobBehavior : MonoBehaviour
 
     private void CheckForPredatorAndPrey()
     {
-        energy -= (int)(perceptionWidth * perceptionDepth) / 2;
+        energy -= (int)(perceptionWidth * perceptionDepth);
 
         if (perception.LatestBlob != null)
         {
@@ -185,21 +208,47 @@ public class BlobBehavior : MonoBehaviour
 
             if (newBlob.size > size * predationLimit)
             {
-                predator = perception.LatestBlob;
+                predator = newBlob;
                 currentSpeed = speed * runModifier;
                 target = null;
             }
             else if (newBlob.size < size / predationLimit)
             {
-                prey = perception.LatestBlob;
+                prey = newBlob;
                 currentSpeed = speed * runModifier;
                 target = null;
             }
-            else if (newBlob.gender != gender)
+            else if (IsGoodPartner(newBlob))
             {
-                partner = perception.LatestBlob;
+                if (partner != null) partner.partner = null;
+                partner = newBlob;
+                newBlob.partner = this;
+            }
+            else if (IsRival(newBlob))
+            {
+                rival = newBlob;
+                newBlob.rival = this;
+                currentSpeed = speed * runModifier;
             }
         }
+    }
+
+    private bool IsRival(BlobBehavior newBlob)
+    {
+        // must both be male, and need to steal their partner
+        return (gender == GenderType.Male && newBlob.gender == GenderType.Male && partner == null & newBlob.partner != null && rival == null && newBlob.rival == null);
+    }
+
+    private bool IsGoodPartner(BlobBehavior blob)
+    {
+        // girls pick boys
+        if (gender == GenderType.Male || blob.gender == GenderType.Female) return false;
+        if (partner == null || partner == this) return true;
+
+        if (partner.energy == 0) return true;
+        if (blob.energy == 0) return false;
+
+        return partner.energy / partner.ticksLived < blob.energy / blob.ticksLived;
     }
 
     private void CleanupPredatorAndPrey()
@@ -230,6 +279,7 @@ public class BlobBehavior : MonoBehaviour
         {
             currentIncubation = 0;
             incubatedEnergy = 0;
+            return;
         }
 
         currentIncubation++;
@@ -238,179 +288,17 @@ public class BlobBehavior : MonoBehaviour
 
         if (currentIncubation >= incubationTicks && partner != null)
         {
-            GameObject gameObject = Instantiate(this.gameObject, transform.position, transform.rotation);
-
-            float newSize = SetNewBlobSize(gameObject);
-            float speedModifier = newSize * newSize;
-
-            BlobBehavior newBlob = gameObject.GetComponent<BlobBehavior>();
-
-            var vectorScale = perception.gameObject.transform.localScale;
-
-            SetPerceptionFields(newBlob);
-            newBlob.randomRotation = MeOrMate().randomRotation * GetDrift();
-
-            newBlob.transform.position = new Vector3(transform.position.x, yConstant, transform.position.z);
-
-            newBlob.speed = MeOrMate().speed * GetDrift();
-            newBlob.jogModifier = MeOrMate().jogModifier * GetDrift();
-            newBlob.runModifier = MeOrMate().runModifier * GetDrift();
-            newBlob.fearOfPredator = MeOrMate().fearOfPredator * GetDrift();
-            newBlob.wantForPrey = MeOrMate().wantForPrey * GetDrift();
-            newBlob.incubationTicks = (int)(incubationTicks * GetDrift());
-            newBlob.rotationSpeed /= speedModifier;
-            newBlob.ground = ground;
-            newBlob.blobPrefab = blobPrefab;
-            newBlob.size = newSize;
-            newBlob.energy = incubatedEnergy;
-            newBlob.reproductionLimit = (int)(reproductionLimit * GetDrift());
-            newBlob.places = (Vector2[])places.Clone();
-            newBlob.latestPlace = latestPlace;
-            newBlob.generation = generation + 1;
-            newBlob.useMemoryPercent = MeOrMate().useMemoryPercent * GetDrift();
-            //newBlob.geneticDrift = MeOrMate().geneticDrift * GetDrift();
-            
-            newBlob.gender = RandomGender();
-            newBlob.name = newBlob.gender.ToString() + "Blob";
-
-            newBlob.Start();
-
-            energy /= 3;
-
-            currentIncubation = 0;
-            children++;
-            partner.children++;
-
-            var stats = ground.GetComponent<Statistics>();
-            BothGenderSurvivalStats(stats, partner);
-
-            UpdateSurvivalStatistics();
+            GameObject newGameObject = Instantiate(gameObject, transform.position, transform.rotation);
+            ReproductionUtil.ReproduceBlob(this, newGameObject);
         }
-    }
-
-    private GenderType RandomGender()
-    {
-        if (Random.value < childGenderRatio) return GenderType.Female;
-        else return GenderType.Male;
-    }
-
-    private BlobBehavior MeOrMate()
-    {
-        if (Random.value < 0.5f) return this;
-        else return partner;
-    }
-
-    private void UpdateCurrentStatisticsForBirth()
-    {
-        var stats = ground.GetComponent<Statistics>();
-
-        UpdateAveragesForBeingBorn(stats);
-
-        stats.numBlobs++;
-        if (stats.recordBlobCount < stats.numBlobs) stats.recordBlobCount = stats.numBlobs;
-    }
-
-    private void UpdateAveragesForBeingBorn(Statistics stats)
-    {
-        stats.averageSize = (stats.averageSize * stats.numBlobs + size) / (stats.numBlobs + 1);
-        stats.averageJogModifier = (stats.averageJogModifier * stats.numBlobs + jogModifier) / (stats.numBlobs + 1);
-        stats.averageRunModifier = (stats.averageRunModifier * stats.numBlobs + runModifier) / (stats.numBlobs + 1);
-        stats.averageRandomRotation = (stats.averageRandomRotation * stats.numBlobs + randomRotation) / (stats.numBlobs + 1);
-        stats.averageFearOfPredator = (stats.averageFearOfPredator * stats.numBlobs + fearOfPredator) / (stats.numBlobs + 1);
-        stats.averageWantOfPrey = (stats.averageWantOfPrey * stats.numBlobs + wantForPrey) / (stats.numBlobs + 1);
-        stats.averageIncubationTicks = (stats.averageIncubationTicks * stats.numBlobs + incubationTicks) / (stats.numBlobs + 1);
-        stats.averageReproductionLimit = (stats.averageReproductionLimit * stats.numBlobs + reproductionLimit) / (stats.numBlobs + 1);
-        stats.percentFemale = (stats.percentFemale * stats.numBlobs + (int)gender) / (stats.numBlobs + 1);
-    }
-
-    private void UpdateCurrentStatisticsForDeath()
-    {
-        var stats = ground.GetComponent<Statistics>();
-
-        UpdateAveragesForDeath(stats);
-
-        stats.numBlobs--;
-    }
-
-    private void UpdateAveragesForDeath(Statistics stats)
-    {
-        stats.averageSize = (stats.averageSize * stats.numBlobs - size) / (stats.numBlobs - 1);
-        stats.averageJogModifier = (stats.averageJogModifier * stats.numBlobs - jogModifier) / (stats.numBlobs - 1);
-        stats.averageRunModifier = (stats.averageRunModifier * stats.numBlobs - runModifier) / (stats.numBlobs - 1);
-        stats.averageRandomRotation = (stats.averageRandomRotation * stats.numBlobs - randomRotation) / (stats.numBlobs - 1);
-        stats.averageFearOfPredator = (stats.averageFearOfPredator * stats.numBlobs - fearOfPredator) / (stats.numBlobs - 1);
-        stats.averageWantOfPrey = (stats.averageWantOfPrey * stats.numBlobs - wantForPrey) / (stats.numBlobs - 1);
-        stats.averageIncubationTicks = (stats.averageIncubationTicks * stats.numBlobs - incubationTicks) / (stats.numBlobs - 1);
-        stats.averageReproductionLimit = (stats.averageReproductionLimit * stats.numBlobs - reproductionLimit) / (stats.numBlobs - 1);
-        stats.percentFemale = (stats.percentFemale * stats.numBlobs - (int)gender) / (stats.numBlobs - 1);
-        stats.averageChildren = (stats.averageChildren * stats.numBlobs - children) / (stats.numBlobs - 1);
-        stats.numFruitEaten -= fruitEaten;
-        stats.numBlobsEaten -= blobsEaten;
-    }
-
-    // this happens after the new blob is instantiated
-    private void UpdateSurvivalStatistics()
-    {
-        var stats = ground.GetComponent<Statistics>();
-
-        BothGenderSurvivalStats(stats, this);
-
-        if (stats.recordChildren < children) stats.recordChildren = children;
-
-        var previousTotalChildrenHad = stats.averageChildren * (stats.numBlobs - 1);
-        stats.averageChildren = (previousTotalChildrenHad + 1) / (stats.numBlobs);
-    }
-
-    private static void BothGenderSurvivalStats(Statistics stats, BlobBehavior blob)
-    {
-        // First time reproducers get to contribute to records
-        if (blob.children == 1)
-        {
-            if (stats.recordHighIncubationTicks < blob.incubationTicks) stats.recordHighIncubationTicks = blob.incubationTicks;
-            if (stats.recordHighJogModifier < blob.jogModifier) stats.recordHighJogModifier = blob.jogModifier;
-            if (stats.recordHighReproductionLimit < blob.reproductionLimit) stats.recordHighReproductionLimit = blob.reproductionLimit;
-            if (stats.recordHighRunModifier < blob.runModifier) stats.recordHighRunModifier = blob.runModifier;
-            if (stats.recordHighSize < blob.size) stats.recordHighSize = blob.size;
-            if (stats.recordLowIncubationTicks > blob.incubationTicks || stats.recordLowIncubationTicks == 0) stats.recordLowIncubationTicks = blob.incubationTicks;
-            if (stats.recordLowJogModifier > blob.jogModifier || stats.recordLowJogModifier == 0) stats.recordLowJogModifier = blob.jogModifier;
-            if (stats.recordLowReproductionLimit > blob.reproductionLimit || stats.recordLowReproductionLimit == 0) stats.recordLowReproductionLimit = blob.reproductionLimit;
-            if (stats.recordLowRunModifier > blob.runModifier || stats.recordLowRunModifier == 0) stats.recordLowRunModifier = blob.runModifier;
-            if (stats.recordLowSize > blob.size) stats.recordLowSize = blob.size;
-        }
-    }
-
-    private void SetPerceptionFields(BlobBehavior newBlob)
-    {
-        var perceptionTransform = newBlob.perception.gameObject.transform;
-
-        newBlob.perceptionDepth = MeOrMate().perceptionDepth * GetDrift();
-        newBlob.perceptionWidth = MeOrMate().perceptionWidth * GetDrift();
-
-        // to keep from stagnating at 0
-        newBlob.perceptionShift = MeOrMate().perceptionShift + GetDrift() + 0.01f;
-
-        perceptionTransform.localScale = new Vector3(newBlob.perceptionWidth, newBlob.perceptionWidth, newBlob.perceptionDepth);
-
-        perceptionTransform.localPosition = new Vector3(0, 0, perceptionTransform.localScale.z * perceptionShift);
-    }
-
-    private float SetNewBlobSize(GameObject gameObject)
-    {
-        var sizeModifier = GetDrift();
-        gameObject.transform.localScale = gameObject.transform.localScale * sizeModifier;
-        return size * sizeModifier;
-    }
-
-    private float GetDrift()
-    {
-        return Random.Range(1 - geneticDrift, 1 + geneticDrift);
     }
 
     private void HeadToTarget(Vector3 targetLocation)
     {
         var targetPosition = targetLocation;
-        targetPosition.y = yConstant;
+        targetPosition.y = ReproductionUtil.yConstant;
         var direction = (targetPosition - transform.position).normalized;
+        direction.y = 0;
         var lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
 
@@ -463,9 +351,7 @@ public class BlobBehavior : MonoBehaviour
     {
         if (new Vector2(transform.position.x, transform.position.z).magnitude > ground.gameObject.transform.localScale.x * 0.48)
         {
-            Vector3 direction = new Vector3(0, 0, 0).normalized;
-
-            transform.LookAt(direction);
+            LookAt(new Vector2(0, 0));
 
             if (predator != null || prey != null)
             {
@@ -477,6 +363,18 @@ public class BlobBehavior : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void LookAt(Vector2 targetCoords)
+    {
+        var targetPosition = new Vector3(targetCoords.x, transform.position.y, targetCoords.y);
+        transform.LookAt(targetPosition);
+
+        //var targetPosition = new Vector3(targetCoords.x, 0, targetCoords.y);
+        //var lookPos = targetPosition - transform.position;
+        //lookPos.y = 0;
+        //var rotation = Quaternion.LookRotation(lookPos);
+        //transform.rotation = rotation;
     }
 
     private void MoveForward()
@@ -531,6 +429,40 @@ public class BlobBehavior : MonoBehaviour
                 if (stats.recordBlobsEaten < blobsEaten) stats.recordBlobsEaten = blobsEaten;
 
                 RememberThisPlace();
+                return;
+            }
+
+            if (targetBlob.Equals(rival))
+            {
+                int hurtRivalAmount = (int)(size * size * size * currentSpeed * currentSpeed * aggression * 1000);
+                int hurtSelfAmount = hurtRivalAmount / 2;
+                int hurtFromRival = (int)(rival.size * rival.size * rival.size * rival.currentSpeed * rival.currentSpeed * rival.aggression * 1000);
+                int hurtRivalSelf = hurtFromRival / 2;
+
+                energy -= (hurtSelfAmount + hurtFromRival);
+                rival.energy -= (hurtRivalAmount + hurtRivalSelf);
+
+                LookAt(new Vector2(-rival.transform.position.x, -rival.transform.position.z));
+
+                rival.LookAt(new Vector2(-transform.position.x, -transform.position.z));
+
+                if (hurtRivalAmount > hurtFromRival && rival.partner != null && partner == null)
+                {
+                    rival.partner.partner = this;
+                    partner = rival.partner;
+                    rival.partner = null;
+                }
+
+                else if (hurtRivalAmount < hurtFromRival && rival.partner == null && partner != null)
+                {
+                    partner.partner = rival;
+                    rival.partner = partner;
+                    partner = null;
+                }
+
+                // make them flee each other after the encounter
+                predator = rival;
+                rival.predator = this;
             }
         }
     }

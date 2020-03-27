@@ -67,7 +67,9 @@ public class CameraBehavior : MonoBehaviour
                         target.incubationTicks + " incubationTicks",
                         target.reproductionLimit + " reproductionLimit",
                         target.children + " children sired",
-                        target.generation + " generation"
+                        target.generation + " generation",
+                        target.childGenderRatio.ToString("F" + numDigitsAfterPoint) + "% female",
+                        target.gender.ToString()
                     };
 
                 DisplayStats(thingsToSay);
@@ -103,6 +105,7 @@ public class CameraBehavior : MonoBehaviour
             "Averages",
             ((float)stats.numFruitEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " fruit eaten",
             ((float)stats.numBlobsEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " blobs eaten",
+
             stats.averageSize.ToString("F" + numDigitsAfterPoint) + " size",
             stats.averageJogModifier.ToString("F" + numDigitsAfterPoint) + " jog speed",
             stats.averageRunModifier.ToString("F" + numDigitsAfterPoint) + " run speed",
@@ -111,7 +114,8 @@ public class CameraBehavior : MonoBehaviour
             stats.averageWantOfPrey.ToString("F" + numDigitsAfterPoint) + " want",
             stats.averageIncubationTicks.ToString("F" + numDigitsAfterPoint) + " incubation",
             stats.averageReproductionLimit.ToString("F0") + " reproduction limit",
-            stats.averageChildren.ToString("F" + numDigitsAfterPoint) + " children"
+            stats.averageChildren.ToString("F" + numDigitsAfterPoint) + " children",
+            stats.percentFemale.ToString("F" + numDigitsAfterPoint) + "% female"
         };
 
         DisplayStats(thingsToSay);
@@ -145,9 +149,12 @@ public class CameraBehavior : MonoBehaviour
 
     private static void DisplayStats(List<string> thingsToSay)
     {
+        var guiStyle = new GUIStyle();
+        guiStyle.fontSize = 26;
+
         for (var i = 0; i < thingsToSay.Count; i++)
         {
-            GUI.Label(new Rect(10, 15 * i + 12, 200, 20), thingsToSay[i]);
+            GUI.Label(new Rect(10, 30 * i + 12, 200, 20), thingsToSay[i], guiStyle);
         }
     }
 

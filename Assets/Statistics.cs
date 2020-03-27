@@ -29,6 +29,7 @@ public class Statistics : MonoBehaviour
     public int recordLowReproductionLimit;
     public float averageChildren;
     public int recordChildren;
+    public float percentFemale;
 
     // Use this for initialization
     void Start()

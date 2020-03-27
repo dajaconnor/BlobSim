@@ -1,16 +1,20 @@
-﻿using System;
+﻿using Assets.Enums;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraBehavior : MonoBehaviour
 {
-
+    public GameObject ground;
     public Material perceptionMaterial;
     public BlobBehavior target;
     public int fruitSpawnRate = 4;
 
     int amount = 1;
     float distanceToTarget = 10;
+    public bool showStats = false;
+    public DisplayType displayType = DisplayType.None;
+    int numDigitsAfterPoint = 2;
 
     // Use this for initialization
     void Start()
@@ -28,43 +32,122 @@ public class CameraBehavior : MonoBehaviour
 
     void OnGUI()
     {
-
+        GUI.contentColor = Color.black;
 
         if (target != null)
         {
-            var timespan = DateTime.Now - target.birthday;
-            var timeString = string.Format("{0}h{1}m{2}s",
-                timespan.Hours,
-                timespan.Minutes,
-                timespan.Seconds);
-
-            var thingsToSay = new List<string>
+            if (showStats)
             {
-                target.energy + " energy left",
-                target.fruitEaten + " fruit found",
-                target.energyFromFruit + " energy from fruit",
-                target.blobsEaten + " blobs cannibalized",
-                target.energyFromBlobs + " energy from blobs",
-                timeString + " lived",
-                target.size + " size",
-                target.perceptionDepth + " perceptionDepth",
-                target.perceptionWidth + " perceptionWidth",
-                target.perceptionShift + " perceptionShift",
-                target.speed + " speed",
-                target.jogModifier + " jogModifier",
-                target.runModifier + " runModifier",
-                target.randomRotation + " randomRotation",
-                target.fearOfPredator + " fearOfPredator",
-                target.wantForPrey + " wantForPrey",
-                target.incubationTicks + " incubationTicks",
-                target.reproductionLimit + " reproductionLimit",
-                target.childen + " children sired"
-            };
 
-            for (var i = 0; i < thingsToSay.Count; i++)
-            {
-                GUI.Label(new Rect(10, 12 * i + 10, 200, 20), thingsToSay[i]);
+                var timespan = TimeSpan.FromTicks(target.ticksLived);
+                var timeString = string.Format("{0}h{1}m{2}s",
+                    timespan.Hours,
+                    timespan.Minutes,
+                    timespan.Seconds);
+
+                var thingsToSay = new List<string>
+                    {
+                        target.energy + " energy left",
+                        target.fruitEaten + " fruit found",
+                        target.energyFromFruit + " energy from fruit",
+                        target.blobsEaten + " blobs cannibalized",
+                        target.energyFromBlobs + " energy from blobs",
+                        timeString + " lived",
+                        target.size.ToString("F" + numDigitsAfterPoint) + " size",
+                        target.useMemoryPercent.ToString("F" + numDigitsAfterPoint) + " memory",
+                        target.perceptionDepth.ToString("F" + numDigitsAfterPoint) + " perceptionDepth",
+                        target.perceptionWidth.ToString("F" + numDigitsAfterPoint) + " perceptionWidth",
+                        target.perceptionShift.ToString("F" + numDigitsAfterPoint) + " perceptionShift",
+                        target.speed.ToString("F" + numDigitsAfterPoint) + " speed",
+                        target.jogModifier.ToString("F" + numDigitsAfterPoint) + " jogModifier",
+                        target.runModifier.ToString("F" + numDigitsAfterPoint) + " runModifier",
+                        target.randomRotation.ToString("F" + numDigitsAfterPoint) + " randomRotation",
+                        target.fearOfPredator.ToString("F" + numDigitsAfterPoint) + " fearOfPredator",
+                        target.wantForPrey.ToString("F" + numDigitsAfterPoint) + " wantForPrey",
+                        target.incubationTicks + " incubationTicks",
+                        target.reproductionLimit + " reproductionLimit",
+                        target.children + " children sired",
+                        target.generation + " generation"
+                    };
+
+                DisplayStats(thingsToSay);
             }
+        }
+        else
+        {
+
+
+            switch (displayType)
+            {
+                case DisplayType.None:
+                    break;
+                case DisplayType.Records:
+                    DisplayRecords();
+                    break;
+                case DisplayType.Statistics:
+                    DisplayStatistics();
+                    break;
+            }
+        }
+    }
+
+    private void DisplayStatistics()
+    {
+
+        var stats = ground.GetComponent<Statistics>();
+
+        var thingsToSay = new List<string>
+        {
+            stats.numBlobs + " blobs",
+            "",
+            "Averages",
+            ((float)stats.numFruitEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " fruit eaten",
+            ((float)stats.numBlobsEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " blobs eaten",
+            stats.averageSize.ToString("F" + numDigitsAfterPoint) + " size",
+            stats.averageJogModifier.ToString("F" + numDigitsAfterPoint) + " jog speed",
+            stats.averageRunModifier.ToString("F" + numDigitsAfterPoint) + " run speed",
+            stats.averageRandomRotation.ToString("F" + numDigitsAfterPoint) + " rotation",
+            stats.averageFearOfPredator.ToString("F" + numDigitsAfterPoint) + " fear",
+            stats.averageWantOfPrey.ToString("F" + numDigitsAfterPoint) + " want",
+            stats.averageIncubationTicks.ToString("F" + numDigitsAfterPoint) + " incubation",
+            stats.averageReproductionLimit.ToString("F0") + " reproduction limit",
+            stats.averageChildren.ToString("F" + numDigitsAfterPoint) + " children"
+        };
+
+        DisplayStats(thingsToSay);
+    }
+
+    private void DisplayRecords()
+    {
+        var stats = ground.GetComponent<Statistics>();
+
+        var thingsToSay = new List<string>
+        {
+            stats.numBlobs + " blobs",
+            "",
+            "Records",
+            stats.recordBlobCount + " blobs",
+            stats.recordBlobsEaten + " blobs eaten",
+            stats.recordFruitEaten + " fruit eaten",
+            stats.recordHighJogModifier + " high jog speed",
+            stats.recordLowJogModifier + " low jog speed",
+            stats.recordHighRunModifier + " high run speed",
+            stats.recordLowRunModifier + " low run speed",
+            stats.recordHighIncubationTicks + " high incubation",
+            stats.recordLowIncubationTicks + " low incubation",
+            stats.recordHighReproductionLimit + " high reproduction limit",
+            stats.recordLowReproductionLimit + " low reproduction limit",
+            stats.recordChildren + " children"
+        };
+
+        DisplayStats(thingsToSay);
+    }
+
+    private static void DisplayStats(List<string> thingsToSay)
+    {
+        for (var i = 0; i < thingsToSay.Count; i++)
+        {
+            GUI.Label(new Rect(10, 15 * i + 12, 200, 20), thingsToSay[i]);
         }
     }
 
@@ -85,9 +168,39 @@ public class CameraBehavior : MonoBehaviour
 
         HandlePerception();
 
-        if (Input.GetKey(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             target = null;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (target != null) showStats = !showStats;
+            else
+            {
+                switch(displayType)
+                {
+                    case DisplayType.None:
+                        displayType = DisplayType.Statistics;
+                        break;
+                    case DisplayType.Statistics:
+                        displayType = DisplayType.Records;
+                        break;
+                    case DisplayType.Records:
+                        displayType = DisplayType.None;
+                        break;
+                }
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Comma) || Input.GetKey(KeyCode.Comma))
+        {
+            Time.timeScale -= 0.1f;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Period) || Input.GetKey(KeyCode.Period))
+        {
+            Time.timeScale += 0.1f;
         }
     }
 

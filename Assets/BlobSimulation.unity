@@ -206,8 +206,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c5ff5abd2885844baf2aee3c43b4ed1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ground: {fileID: 1947380521}
   perceptionMaterial: {fileID: 2100000, guid: 8c60d8c261e60354f8432638c29337c9, type: 2}
   target: {fileID: 0}
+  fruitSpawnRate: 4
+  showStats: 0
+  displayType: 0
 --- !u!1 &883025364
 GameObject:
   m_ObjectHideFlags: 0
@@ -341,6 +345,7 @@ GameObject:
   - component: {fileID: 1947380524}
   - component: {fileID: 1947380523}
   - component: {fileID: 1947380522}
+  - component: {fileID: 1947380528}
   - component: {fileID: 1947380527}
   m_Layer: 0
   m_Name: Ground
@@ -424,7 +429,7 @@ Transform:
   m_GameObject: {fileID: 1947380521}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 300, y: 0.01, z: 300}
+  m_LocalScale: {x: 150, y: 0.01, z: 150}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
@@ -444,3 +449,40 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 0
+--- !u!114 &1947380528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1947380521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b70248a43c720b43b4c7cff7362622a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numBlobs: 0
+  recordBlobCount: 0
+  numBlobsEaten: 0
+  recordBlobsEaten: 0
+  numFruitEaten: 0
+  recordFruitEaten: 0
+  averageSize: 0
+  averageJogModifier: 0
+  recordHighSize: 0
+  recordLowSize: 0
+  recordHighJogModifier: 0
+  recordLowJogModifier: 0
+  averageRunModifier: 0
+  recordHighRunModifier: 0
+  recordLowRunModifier: 0
+  averageRandomRotation: 0
+  averageFearOfPredator: 0
+  averageWantOfPrey: 0
+  averageIncubationTicks: 0
+  recordHighIncubationTicks: 0
+  recordLowIncubationTicks: 0
+  averageReproductionLimit: 0
+  recordHighReproductionLimit: 0
+  recordLowReproductionLimit: 0
+  averageChildren: 0
+  recordChildren: 0

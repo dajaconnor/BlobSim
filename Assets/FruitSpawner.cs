@@ -44,9 +44,14 @@ public class FruitSpawner : MonoBehaviour
 
     private void OnGUI()
     {
-        if (Camera.main.GetComponent<CameraBehavior>().target == null)
+        GUI.contentColor = Color.black;
+
+        var behavior = Camera.main.GetComponent<CameraBehavior>();
+
+        if (behavior.target == null && behavior.displayType != Assets.Enums.DisplayType.None)
         {
-            GUI.Label(new Rect(10, 10, 200, 20), "Spawn rate is " + Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate);
+            GUI.Label(new Rect(Screen.width - 200, 10, 200, 20), "Fruit spawn rate " + Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate);
+            GUI.Label(new Rect(Screen.width - 200, 25, 200, 20), "Simulation speed " + Time.timeScale.ToString("F2"));
         }
     }
 
@@ -55,7 +60,8 @@ public class FruitSpawner : MonoBehaviour
         Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(transform.localScale.x / 2 * 0.95f);
         Vector3 randomSpawnRotation = Vector3.up * Random.Range(0, 360);
 
-        Instantiate(fruitPrefab, randomSpawnPosition, Quaternion.Euler(randomSpawnRotation));
+        var fruit = Instantiate(fruitPrefab, randomSpawnPosition, Quaternion.Euler(randomSpawnRotation));
+        fruit.name = "Fruit";
     }
 
 

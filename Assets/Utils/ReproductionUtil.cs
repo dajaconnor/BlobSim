@@ -15,8 +15,7 @@ namespace Assets.Utils
             float speedModifier = newSize * newSize;
 
             BlobBehavior newBlob = gameObject.GetComponent<BlobBehavior>();
-
-            var vectorScale = mother.perception.gameObject.transform.localScale;
+            newBlob.Start();
 
             SetPerceptionFields(mother, newBlob);
             newBlob.randomRotation = MeOrMate(mother).randomRotation * GetDrift();
@@ -42,9 +41,14 @@ namespace Assets.Utils
             newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
 
             newBlob.gender = RandomGender(mother);
-            newBlob.name = newBlob.gender.ToString() + "Blob";
 
-            newBlob.Start();
+            if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int) (mother.sexualMaturity * GetDrift());
+            else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());
+            
+            newBlob.name = newBlob.gender.ToString() + "Blob";
+            newBlob.parent = mother;
+
+            
 
             mother.currentIncubation = 0;
             mother.children++;
@@ -52,7 +56,7 @@ namespace Assets.Utils
             mother.energy /= 3;
 
 
-            mother.stats.BothGenderSurvivalStats(mother.partner);
+            mother.stats.BothGenderRecords(mother.partner);
 
             mother.stats.UpdateSurvivalStatistics(mother);
         }
@@ -80,7 +84,7 @@ namespace Assets.Utils
             newBlob.perceptionWidth = parent.perceptionWidth * GetDrift();
 
             // to keep from stagnating at 0
-            newBlob.perceptionShift = parent.perceptionShift + GetDrift() + 0.01f;
+            newBlob.perceptionShift = parent.perceptionShift + (GetDrift() - 0.999f);
 
             perceptionTransform.localScale = new Vector3(newBlob.perceptionWidth, newBlob.perceptionWidth, newBlob.perceptionDepth);
 

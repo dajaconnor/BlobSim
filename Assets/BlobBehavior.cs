@@ -8,7 +8,6 @@ public class BlobBehavior : MonoBehaviour
     public GameObject ground;
     public PerceptionBehavior perception;
     public GameObject blobPrefab;
-    public Material material;
 
     // Things that evolve
     internal float size = 1;
@@ -27,6 +26,8 @@ public class BlobBehavior : MonoBehaviour
     internal int generation = 0;
     internal float childGenderRatio = 0.5f;
     internal float aggression = 10f;
+    internal int sexualMaturity = 1000;
+    internal BlobStatusType status = BlobStatusType.Wandering;
     public GenderType gender = GenderType.Male;
 
     // Dependent on size
@@ -45,7 +46,7 @@ public class BlobBehavior : MonoBehaviour
     GameObject target;
     BlobBehavior predator;
     BlobBehavior prey;
-    BlobBehavior parent;
+    internal BlobBehavior parent;
     BlobBehavior rival;
     public BlobBehavior partner;
 
@@ -67,6 +68,11 @@ public class BlobBehavior : MonoBehaviour
     internal Vector2[] places = new Vector2[6];
     internal Statistics stats;
 
+    private Color normalColor = new Color(0.125f, 0.5f, 1);
+    private Color angryColor = new Color(1, 0, 0);
+    private Color scaredColor = new Color(1, 1, 0);
+    private Color hungryColor = new Color(0.09375f, 0.3984375f, 0);
+
     internal void Start()
     {
         fruitEaten = 0;
@@ -75,15 +81,11 @@ public class BlobBehavior : MonoBehaviour
         energyFromBlobs = 0;
         children = 0;
         ticksLived = 0;
+        perceptionShift = 0.5f;
+        energy = 300000;
         stats = ground.GetComponent<Statistics>();
 
         if (generation < 2) partner = this;
-
-        if (!updatedForBirth)
-        {
-            updatedForBirth = true;
-            stats.UpdateCurrentStatisticsForBirth(this);
-        }
     }
 
     // Update is called once per frame
@@ -91,15 +93,22 @@ public class BlobBehavior : MonoBehaviour
     {
         ticksLived++;
 
+        if (!updatedForBirth)
+        {
+            updatedForBirth = true;
+            stats.UpdateAverages(this, StatType.Birth);
+        }
+
         if (ShouldDie())
         {
-            stats.UpdateCurrentStatisticsForDeath(this);
+            stats.UpdateAverages(this, StatType.Death);
             Destroy(this.gameObject);
             Destroy(this);
             return;
         }
 
         FixHeightBug();
+        TendColor();
 
         if (ShouldReproduce())
         {
@@ -107,7 +116,7 @@ public class BlobBehavior : MonoBehaviour
             return;
         }
 
-        CleanupPredatorAndPrey();
+        UpdateStatus();
         CheckForPredatorAndPrey();
 
         if (predator != null)
@@ -139,23 +148,46 @@ public class BlobBehavior : MonoBehaviour
             }
             else
             {
-                currentSpeed = speed * jogModifier;
+                SetSpeedAndColor(speed * jogModifier, hungryColor, BlobStatusType.Foraging);
             }
         }
 
         HeadToTarget(target.transform.position);
     }
 
+    private void TendColor()
+    {
+        if (!Camera.main.GetComponent<CameraBehavior>().colorToggle)
+        {
+            GetComponent<Renderer>().material.color = normalColor;
+            return;
+        }
+
+        if (target == null && prey == null && GetComponent<Renderer>().material.color.Equals(hungryColor))
+        {
+            GetComponent<Renderer>().material.color = normalColor;
+            return;
+        }
+
+        if (rival == null && GetComponent<Renderer>().material.color.Equals(angryColor))
+        {
+            GetComponent<Renderer>().material.color = normalColor;
+            return;
+        }
+    }
+
     private void FightRival()
     {
-        var targetPosition = rival.transform.position;
-        //targetPosition.y = ReproductionUtil.yConstant;
-        var direction = (targetPosition - transform.position).normalized;
-        direction.y = 0;
-        var lookRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed * aggression);
+        print("Heading to rival");
+        HeadToTarget(rival.transform.position);
+        //var targetPosition = rival.transform.position;
+        ////targetPosition.y = ReproductionUtil.yConstant;
+        //var direction = (targetPosition - transform.position).normalized;
+        ////direction.y = 0;
+        //var lookRotation = Quaternion.LookRotation(direction);
+        //transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 0);//Time.deltaTime * rotationSpeed / aggression);
 
-        MoveForward();
+        //MoveForward();
     }
 
     void OnMouseDown()
@@ -165,7 +197,7 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldReproduce()
     {
-        return gender.Equals(GenderType.Female) && (energy > reproductionLimit || currentIncubation > 0) && partner != null;
+        return ticksLived > sexualMaturity && gender.Equals(GenderType.Female) && (energy > reproductionLimit || currentIncubation > 0) && partner != null;
     }
 
     private void FixHeightBug()
@@ -188,7 +220,7 @@ public class BlobBehavior : MonoBehaviour
         if (!LeaveEdge())
         {
             var targetPosition = predator.transform.position;
-            targetPosition.y = -transform.position.y;
+            targetPosition.y = 0;
             var lookRotation = Quaternion.LookRotation(-targetPosition);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed * Random.Range(0.1f, 1.2f));
         }
@@ -204,18 +236,18 @@ public class BlobBehavior : MonoBehaviour
         {
             var newBlob = perception.LatestBlob;
 
-            if (parent != null && (newBlob.Equals(parent) || newBlob.parent.Equals(this))) return;
+            if (parent != null && (newBlob.Equals(parent) || (newBlob.parent != null && newBlob.parent.Equals(this)))) return;
 
             if (newBlob.size > size * predationLimit)
             {
                 predator = newBlob;
-                currentSpeed = speed * runModifier;
+                SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
                 target = null;
             }
             else if (newBlob.size < size / predationLimit)
             {
                 prey = newBlob;
-                currentSpeed = speed * runModifier;
+                SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
                 target = null;
             }
             else if (IsGoodPartner(newBlob))
@@ -226,9 +258,14 @@ public class BlobBehavior : MonoBehaviour
             }
             else if (IsRival(newBlob))
             {
+                print("I see rival");
+
                 rival = newBlob;
                 newBlob.rival = this;
-                currentSpeed = speed * runModifier;
+                SetSpeedAndColor(speed * runModifier, angryColor, BlobStatusType.Fighting);
+                rival.SetSpeedAndColor(rival.speed * rival.runModifier, angryColor, BlobStatusType.Fighting);
+                LookAt(rival.transform.position);
+                rival.LookAt(transform.position);
             }
         }
     }
@@ -245,30 +282,41 @@ public class BlobBehavior : MonoBehaviour
         if (gender == GenderType.Male || blob.gender == GenderType.Female) return false;
         if (partner == null || partner == this) return true;
 
-        if (partner.energy == 0) return true;
-        if (blob.energy == 0) return false;
+        if (partner.ticksLived == 0) return true;
+        if (blob.ticksLived < sexualMaturity) return false;
 
         return partner.energy / partner.ticksLived < blob.energy / blob.ticksLived;
     }
 
-    private void CleanupPredatorAndPrey()
+    private void UpdateStatus()
     {
         if (prey != null && Vector3.Distance(prey.transform.position, transform.position) > wantForPrey)
         {
             prey = null;
 
-            if (predator == null)
+            if (predator == null && rival == null)
             {
-                currentSpeed = speed;
+                SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
             }
         }
         if (predator != null && Vector3.Distance(predator.transform.position, transform.position) > fearOfPredator)
         {
             predator = null;
 
-            if (prey == null)
+            if (rival == null)
             {
-                currentSpeed = speed;
+                if (prey == null)
+                {
+                    SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
+                }
+                else
+                {
+                    SetSpeedAndColor(speed * jogModifier, hungryColor, BlobStatusType.Chasing);
+                }
+            }
+            else
+            {
+                SetSpeedAndColor(currentSpeed, angryColor, BlobStatusType.Fighting);
             }
         }
     }
@@ -296,7 +344,7 @@ public class BlobBehavior : MonoBehaviour
     private void HeadToTarget(Vector3 targetLocation)
     {
         var targetPosition = targetLocation;
-        targetPosition.y = ReproductionUtil.yConstant;
+        targetPosition.y = 0;
         var direction = (targetPosition - transform.position).normalized;
         direction.y = 0;
         var lookRotation = Quaternion.LookRotation(direction);
@@ -307,6 +355,8 @@ public class BlobBehavior : MonoBehaviour
 
     private void RandomWalk()
     {
+        SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
+
         if (!LeaveEdge())
         {
             if (GoToRememberedPlace()) return;
@@ -367,14 +417,8 @@ public class BlobBehavior : MonoBehaviour
 
     private void LookAt(Vector2 targetCoords)
     {
-        var targetPosition = new Vector3(targetCoords.x, transform.position.y, targetCoords.y);
+        var targetPosition = new Vector3(targetCoords.x, 0, targetCoords.y);
         transform.LookAt(targetPosition);
-
-        //var targetPosition = new Vector3(targetCoords.x, 0, targetCoords.y);
-        //var lookPos = targetPosition - transform.position;
-        //lookPos.y = 0;
-        //var rotation = Quaternion.LookRotation(lookPos);
-        //transform.rotation = rotation;
     }
 
     private void MoveForward()
@@ -401,7 +445,7 @@ public class BlobBehavior : MonoBehaviour
             target = null;
             energy += energyPerFruit;
             energyFromFruit += energyPerFruit;
-            currentSpeed = speed;
+            UpdateStatus();
             fruitEaten++;
             stats.numFruitEaten++;
 
@@ -421,7 +465,7 @@ public class BlobBehavior : MonoBehaviour
                 target = null;
                 energy += deltaEnergy;
                 energyFromBlobs += deltaEnergy;
-                currentSpeed = speed;
+                UpdateStatus();
                 targetBlob.die = true;
                 blobsEaten++;
                 stats.numBlobsEaten++;
@@ -434,17 +478,21 @@ public class BlobBehavior : MonoBehaviour
 
             if (targetBlob.Equals(rival))
             {
-                int hurtRivalAmount = (int)(size * size * size * currentSpeed * currentSpeed * aggression * 1000);
+                print("I fight rival");
+
+                int hurtRivalAmount = (int)(size * size * size * currentSpeed * currentSpeed * aggression * 100);
                 int hurtSelfAmount = hurtRivalAmount / 2;
-                int hurtFromRival = (int)(rival.size * rival.size * rival.size * rival.currentSpeed * rival.currentSpeed * rival.aggression * 1000);
+                int hurtFromRival = (int)(rival.size * rival.size * rival.size * rival.currentSpeed * rival.currentSpeed * rival.aggression * 100);
                 int hurtRivalSelf = hurtFromRival / 2;
 
                 energy -= (hurtSelfAmount + hurtFromRival);
                 rival.energy -= (hurtRivalAmount + hurtRivalSelf);
 
-                LookAt(new Vector2(-rival.transform.position.x, -rival.transform.position.z));
+                var newAngle = transform.eulerAngles + 180f * Vector3.up;
+                transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, newAngle, 0.1f * Time.deltaTime);
 
-                rival.LookAt(new Vector2(-transform.position.x, -transform.position.z));
+                newAngle = rival.transform.eulerAngles + 180f * Vector3.up;
+                rival.transform.eulerAngles = Vector3.Lerp(rival.transform.eulerAngles, newAngle, 0.1f * Time.deltaTime);
 
                 if (hurtRivalAmount > hurtFromRival && rival.partner != null && partner == null)
                 {
@@ -460,9 +508,24 @@ public class BlobBehavior : MonoBehaviour
                     partner = null;
                 }
 
-                // make them flee each other after the encounter
-                predator = rival;
-                rival.predator = this;
+                if (rival.energy <= 0) {
+                    rival = null;
+                    UpdateStatus();
+                }
+                else
+                {
+                    // make them flee each other after the encounter
+                    predator = rival;
+                    rival.predator = this;
+
+                    SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
+                    rival.SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
+
+                    rival.rival = null;
+                    rival = null;
+
+                    print("I flee rival");
+                }
             }
         }
     }
@@ -479,5 +542,12 @@ public class BlobBehavior : MonoBehaviour
         if (latestPlace >= places.Length) latestPlace = 0;
 
         return latestPlace;
+    }
+
+    private void SetSpeedAndColor(float newSpeed, Color newColor, BlobStatusType newStatus)
+    {
+        currentSpeed = newSpeed;
+        status = newStatus;
+        if (Camera.main.GetComponent<CameraBehavior>().colorToggle) GetComponent<Renderer>().material.color = newColor;
     }
 }

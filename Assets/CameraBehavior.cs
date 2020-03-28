@@ -9,6 +9,7 @@ public class CameraBehavior : MonoBehaviour
     public Material perceptionMaterial;
     public BlobBehavior target;
     public int fruitSpawnRate = 4;
+    public bool colorToggle = false;
 
     int amount = 1;
     float distanceToTarget = 10;
@@ -70,7 +71,8 @@ public class CameraBehavior : MonoBehaviour
                         target.children + " children sired",
                         target.generation + " generation",
                         target.childGenderRatio.ToString("F" + numDigitsAfterPoint) + "% female",
-                        target.gender.ToString()
+                        target.gender.ToString(),
+                        target.status.ToString()
                     };
 
                 DisplayStats(thingsToSay);
@@ -116,7 +118,7 @@ public class CameraBehavior : MonoBehaviour
             stats.averageWantOfPrey.ToString("F" + numDigitsAfterPoint) + " want",
             stats.averageIncubationTicks.ToString("F" + numDigitsAfterPoint) + " incubation",
             stats.averageReproductionLimit.ToString("F0") + " reproduction limit",
-            stats.averageChildren.ToString("F" + numDigitsAfterPoint) + " children",
+            stats.averageChildrenPerFemale.ToString("F" + numDigitsAfterPoint) + " children",
             stats.percentFemale.ToString("F" + numDigitsAfterPoint) + "% female"
         };
 
@@ -210,6 +212,11 @@ public class CameraBehavior : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Period) || Input.GetKey(KeyCode.Period))
         {
             Time.timeScale += 0.1f;
+        }
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            colorToggle = !colorToggle;
         }
     }
 

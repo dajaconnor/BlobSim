@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Assets.Enums;
+using UnityEngine;
 
 public class Statistics : MonoBehaviour
 {
@@ -28,7 +29,7 @@ public class Statistics : MonoBehaviour
     public float averageReproductionLimit;
     public int recordHighReproductionLimit;
     public int recordLowReproductionLimit;
-    public float averageChildren;
+    public float averageChildrenPerFemale;
     public int recordChildren;
     public float percentFemale;
 
@@ -44,64 +45,60 @@ public class Statistics : MonoBehaviour
 
     }
 
-    public void UpdateCurrentStatisticsForBirth(BlobBehavior blob)
+    public void UpdateAverages(BlobBehavior blob, StatType statType)
     {
-        UpdateAveragesForBeingBorn(blob);
+        averageSize = CalculateNewAverage(averageSize, blob.size, statType);
 
-        numBlobs++;
-        if (recordBlobCount < numBlobs) recordBlobCount = numBlobs;
-    }
+        averageJogModifier = CalculateNewAverage(averageJogModifier, blob.jogModifier, statType);
 
-    public void UpdateAveragesForBeingBorn(BlobBehavior blob)
-    {
-        averageSize = (averageSize * numBlobs + blob.size) / (numBlobs + 1);
-        averageJogModifier = (averageJogModifier * numBlobs + blob.jogModifier) / (numBlobs + 1);
-        averageRunModifier = (averageRunModifier * numBlobs + blob.runModifier) / (numBlobs + 1);
-        averageRandomRotation = (averageRandomRotation * numBlobs + blob.randomRotation) / (numBlobs + 1);
-        averageAggression = (averageAggression * numBlobs + blob.aggression) / (numBlobs + 1);
-        averageFearOfPredator = (averageFearOfPredator * numBlobs + blob.fearOfPredator) / (numBlobs + 1);
-        averageWantOfPrey = (averageWantOfPrey * numBlobs + blob.wantForPrey) / (numBlobs + 1);
-        averageIncubationTicks = (averageIncubationTicks * numBlobs + blob.incubationTicks) / (numBlobs + 1);
-        averageReproductionLimit = (averageReproductionLimit * numBlobs + blob.reproductionLimit) / (numBlobs + 1);
-        percentFemale = (percentFemale * numBlobs + (int)blob.gender) / (numBlobs + 1);
-    }
+        averageRunModifier = CalculateNewAverage(averageRunModifier, blob.runModifier, statType);
 
-    public void UpdateCurrentStatisticsForDeath(BlobBehavior blob)
-    {
-        UpdateAveragesForDeath(blob);
+        averageRandomRotation = CalculateNewAverage(averageRandomRotation, blob.randomRotation, statType);
 
-        numBlobs--;
-    }
+        averageAggression = CalculateNewAverage(averageAggression, blob.aggression, statType);
 
-    public void UpdateAveragesForDeath(BlobBehavior blob)
-    {
-        averageSize = (averageSize * numBlobs - blob.size) / (numBlobs - 1);
-        averageJogModifier = (averageJogModifier * numBlobs - blob.jogModifier) / (numBlobs - 1);
-        averageRunModifier = (averageRunModifier * numBlobs - blob.runModifier) / (numBlobs - 1);
-        averageRandomRotation = (averageRandomRotation * numBlobs - blob.randomRotation) / (numBlobs - 1);
-        averageAggression = (averageAggression * numBlobs - blob.aggression) / (numBlobs - 1);
-        averageFearOfPredator = (averageFearOfPredator * numBlobs - blob.fearOfPredator) / (numBlobs - 1);
-        averageWantOfPrey = (averageWantOfPrey * numBlobs - blob.wantForPrey) / (numBlobs - 1);
-        averageIncubationTicks = (averageIncubationTicks * numBlobs - blob.incubationTicks) / (numBlobs - 1);
-        averageReproductionLimit = (averageReproductionLimit * numBlobs - blob.reproductionLimit) / (numBlobs - 1);
-        percentFemale = (percentFemale * numBlobs - (int)blob.gender) / (numBlobs - 1);
-        averageChildren = (averageChildren * numBlobs - blob.children) / (numBlobs - 1);
+        averageFearOfPredator = CalculateNewAverage(averageFearOfPredator, blob.fearOfPredator, statType);
+
+        averageWantOfPrey = CalculateNewAverage(averageWantOfPrey, blob.wantForPrey, statType);
+
+        averageIncubationTicks = CalculateNewAverage(averageIncubationTicks, blob.incubationTicks, statType);
+
+        averageReproductionLimit = CalculateNewAverage(averageReproductionLimit, blob.reproductionLimit, statType);
+
+        percentFemale = CalculateNewAverage(percentFemale, (int)blob.gender, statType);
+
+        if (blob.gender.Equals(GenderType.Female)) averageChildrenPerFemale = CalculateNewAverage(averageChildrenPerFemale, blob.children, statType);
+
         numFruitEaten -= blob.fruitEaten;
         numBlobsEaten -= blob.blobsEaten;
+
+        if (statType.Equals(StatType.Birth))
+        {
+            numBlobs++;
+            if (recordBlobCount < numBlobs) recordBlobCount = numBlobs;
+        }
+        else numBlobs--;
+    }
+
+    private float CalculateNewAverage(float currentAverage, float addition, StatType stateType)
+    {
+        var sign = stateType.Equals(StatType.Birth) ? 1 : -1;
+
+        return (currentAverage * numBlobs + addition * sign) / (numBlobs + sign);
     }
 
     // this happens after the new blob is instantiated
     public void UpdateSurvivalStatistics(BlobBehavior blob)
     {
-        BothGenderSurvivalStats(blob);
+        BothGenderRecords(blob);
 
         if (recordChildren < blob.children) recordChildren = blob.children;
 
-        var previousTotalChildrenHad = averageChildren * (numBlobs - 1);
-        averageChildren = (previousTotalChildrenHad + 1) / (numBlobs);
+        var previousTotalChildrenHad = averageChildrenPerFemale * (numBlobs);
+        averageChildrenPerFemale = (previousTotalChildrenHad + 1) / (numBlobs + 1);
     }
 
-    public void BothGenderSurvivalStats(BlobBehavior blob)
+    public void BothGenderRecords(BlobBehavior blob)
     {
         // First time reproducers get to contribute to records
         if (blob.children == 1)

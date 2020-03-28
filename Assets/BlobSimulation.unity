@@ -121,6 +121,24 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &231399629 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1381535929077618, guid: 382a608105fc595409b19f6506a44428,
+    type: 3}
+  m_PrefabInstance: {fileID: 1092580605}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &231399630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 231399629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75ff12a70958156428a6a79b795d9158, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &372817560 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 114493190944334186, guid: 382a608105fc595409b19f6506a44428,
@@ -242,6 +260,7 @@ MonoBehaviour:
   perceptionMaterial: {fileID: 2100000, guid: 8c60d8c261e60354f8432638c29337c9, type: 2}
   target: {fileID: 0}
   fruitSpawnRate: 4
+  colorToggle: 0
   showStats: 0
   displayType: 0
 --- !u!1 &883025364
@@ -359,6 +378,18 @@ PrefabInstance:
       propertyPath: m_LocalScale.x
       value: 1.1568
       objectReference: {fileID: 0}
+    - target: {fileID: 4623377839044120, guid: 382a608105fc595409b19f6506a44428, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4623377839044120, guid: 382a608105fc595409b19f6506a44428, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4623377839044120, guid: 382a608105fc595409b19f6506a44428, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.9
+      objectReference: {fileID: 0}
     - target: {fileID: 4964004253990118, guid: 382a608105fc595409b19f6506a44428, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.23290125
@@ -418,6 +449,11 @@ PrefabInstance:
       propertyPath: partner
       value: 
       objectReference: {fileID: 372817560}
+    - target: {fileID: 114493190944334186, guid: 382a608105fc595409b19f6506a44428,
+        type: 3}
+      propertyPath: material
+      value: 
+      objectReference: {fileID: 2100000, guid: 6c8513c36190eb54dbfb35fc8de5a7f4, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 382a608105fc595409b19f6506a44428, type: 3}
 --- !u!1 &1947380521
@@ -575,6 +611,7 @@ MonoBehaviour:
   recordHighRunModifier: 0
   recordLowRunModifier: 0
   averageRandomRotation: 0
+  averageAggression: 0
   averageFearOfPredator: 0
   averageWantOfPrey: 0
   averageIncubationTicks: 0
@@ -583,6 +620,6 @@ MonoBehaviour:
   averageReproductionLimit: 0
   recordHighReproductionLimit: 0
   recordLowReproductionLimit: 0
-  averageChildren: 0
+  averageChildrenPerFemale: 0
   recordChildren: 0
   percentFemale: 0

@@ -15,6 +15,8 @@ namespace Assets.Utils
             float speedModifier = newSize * newSize;
 
             BlobBehavior newBlob = gameObject.GetComponent<BlobBehavior>();
+            newBlob.generation = mother.generation + 1;
+
             newBlob.Start();
 
             SetPerceptionFields(mother, newBlob);
@@ -28,6 +30,7 @@ namespace Assets.Utils
             newBlob.runModifier = MeOrMate(mother).runModifier * GetDrift();
             newBlob.fearOfPredator = MeOrMate(mother).fearOfPredator * GetDrift();
             newBlob.wantForPrey = MeOrMate(mother).wantForPrey * GetDrift();
+            newBlob.childGenderRatio = MeOrMate(mother).childGenderRatio * GetDrift();
             newBlob.incubationTicks = (int)(mother.incubationTicks * GetDrift());
             newBlob.rotationSpeed /= speedModifier;
             newBlob.ground = mother.ground;
@@ -37,7 +40,7 @@ namespace Assets.Utils
             newBlob.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
             newBlob.places = (Vector2[])mother.places.Clone();
             newBlob.latestPlace = mother.latestPlace;
-            newBlob.generation = mother.generation + 1;
+            
             newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
 
             newBlob.gender = RandomGender(mother);
@@ -48,15 +51,19 @@ namespace Assets.Utils
             newBlob.name = newBlob.gender.ToString() + "Blob";
             newBlob.parent = mother;
 
+            mother.incubatedEnergy = 0;
             mother.currentIncubation = 0;
             mother.children++;
-            mother.partner.children++;
+
+            // Because of starting positions.  Don't judgde me.
+            if (mother != mother.partner) mother.partner.children++;
             mother.energy /= 3;
 
 
-            mother.stats.BothGenderRecords(mother.partner);
-
-            mother.stats.UpdateSurvivalStatistics(mother);
+            var stats = mother.ground.GetComponent<Statistics>();
+            stats.BothGenderRecords(mother.partner);
+            stats.UpdateSurvivalStatistics(mother);
+            stats.UpdateAverages(newBlob, StatType.Birth);
         }
 
 

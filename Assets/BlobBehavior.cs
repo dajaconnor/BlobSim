@@ -51,7 +51,7 @@ public class BlobBehavior : MonoBehaviour
     public BlobBehavior partner;
 
     internal int currentIncubation = 0;
-    float predationLimit = 1.2f;
+    float predationLimit = 1.5f;
     Vector3 randomTarget;
 
 
@@ -76,15 +76,21 @@ public class BlobBehavior : MonoBehaviour
 
     internal void Start()
     {
-        fruitEaten = 0;
-        blobsEaten = 0;
-        energyFromFruit = 0;
-        energyFromBlobs = 0;
-        children = 0;
-        ticksLived = 0;
-        perceptionShift = 0.5f;
-        energy = 300000;
         stats = ground.GetComponent<Statistics>();
+
+        if (generation == 0)
+        {
+            fruitEaten = 0;
+            blobsEaten = 0;
+            energyFromFruit = 0;
+            energyFromBlobs = 0;
+            children = 0;
+            ticksLived = 0;
+            perceptionShift = 0.5f;
+            energy = 300000000;
+            gender = GenderType.Female;
+            childGenderRatio = 0.5f;
+        }
 
         if (generation < 2) partner = this;
     }
@@ -93,12 +99,6 @@ public class BlobBehavior : MonoBehaviour
     void Update()
     {
         ticksLived++;
-
-        if (!updatedForBirth)
-        {
-            updatedForBirth = true;
-            stats.UpdateAverages(this, StatType.Birth);
-        }
 
         if (ShouldDie())
         {
@@ -208,7 +208,7 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldReproduce()
     {
-        return gender.Equals(GenderType.Female) && ticksLived > sexualMaturity && (energy > reproductionLimit || currentIncubation > 0) && partner != null;
+        return (gender.Equals(GenderType.Female) && ticksLived > sexualMaturity && (energy > reproductionLimit || currentIncubation > 0) && partner != null) || generation == 0;
     }
 
     private void FixHeightBug()
@@ -397,8 +397,6 @@ public class BlobBehavior : MonoBehaviour
 
     void OnTriggerEnter(Collider triggerCollider)
     {
-        var stats = ground.GetComponent<Statistics>();
-
         if (triggerCollider.gameObject.name.StartsWith("Fruit"))
         {
             Destroy(triggerCollider.gameObject);

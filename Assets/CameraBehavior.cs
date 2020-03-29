@@ -40,7 +40,7 @@ public class CameraBehavior : MonoBehaviour
             if (showStats)
             {
 
-                var timespan = TimeSpan.FromMilliseconds(target.ticksLived * 10);
+                var timespan = TimeSpan.FromMilliseconds(target.ticksLived * 20);
                 var timeString = string.Format("{0}h{1}m{2}s",
                     timespan.Hours,
                     timespan.Minutes,
@@ -67,6 +67,7 @@ public class CameraBehavior : MonoBehaviour
                         target.fearOfPredator.ToString("F" + numDigitsAfterPoint) + " fearOfPredator",
                         target.wantForPrey.ToString("F" + numDigitsAfterPoint) + " wantForPrey",
                         target.incubationTicks + " incubationTicks",
+                        target.incubatedEnergy + " incubatedEnergy",
                         target.reproductionLimit + " reproductionLimit",
                         target.children + " children sired",
                         target.generation + " generation",
@@ -104,7 +105,7 @@ public class CameraBehavior : MonoBehaviour
         var thingsToSay = new List<string>
         {
             stats.numBlobs + " blobs",
-            "",
+            stats.totalFemales + " females",
             "Averages",
             ((float)stats.numFruitEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " fruit eaten",
             ((float)stats.numBlobsEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " blobs eaten",

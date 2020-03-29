@@ -4,7 +4,7 @@ using UnityEngine;
 public class Statistics : MonoBehaviour
 {
 
-    public int numBlobs;
+    internal int numBlobs;
     public int recordBlobCount;
     public int numBlobsEaten;
     public int recordBlobsEaten;
@@ -29,9 +29,16 @@ public class Statistics : MonoBehaviour
     public float averageReproductionLimit;
     public int recordHighReproductionLimit;
     public int recordLowReproductionLimit;
-    public float averageChildrenPerFemale;
     public int recordChildren;
-    public float percentFemale;
+    internal int totalFemales {
+        get;
+        set;
+    }
+
+    public float percentFemale { get { return (float)totalFemales / numBlobs; } }
+    public float averageChildrenPerFemale { get { return (float)totalChildren / totalFemales; } }
+
+    private int totalChildren;
 
     // Use this for initialization
     void Start()
@@ -65,19 +72,24 @@ public class Statistics : MonoBehaviour
 
         averageReproductionLimit = CalculateNewAverage(averageReproductionLimit, blob.reproductionLimit, statType);
 
-        percentFemale = CalculateNewAverage(percentFemale, (int)blob.gender, statType);
+        //percentFemale = CalculateNewAverage(percentFemale, (int)blob.gender, statType);
 
-        if (blob.gender.Equals(GenderType.Female)) averageChildrenPerFemale = CalculateNewAverage(averageChildrenPerFemale, blob.children, statType);
+        if (blob.gender.Equals(GenderType.Female) && statType == StatType.Death) totalChildren -= blob.children; //averageChildrenPerFemale = CalculateChildrenAverage(averageChildrenPerFemale, blob.children, statType);
 
         numFruitEaten -= blob.fruitEaten;
         numBlobsEaten -= blob.blobsEaten;
 
         if (statType.Equals(StatType.Birth))
         {
+            if (blob.generation > 0) totalChildren++;
             numBlobs++;
+            if (blob.gender.Equals(GenderType.Female)) totalFemales++;
             if (recordBlobCount < numBlobs) recordBlobCount = numBlobs;
         }
-        else numBlobs--;
+        else {
+            numBlobs--;
+            if (blob.gender.Equals(GenderType.Female)) totalFemales--;
+        }
     }
 
     private float CalculateNewAverage(float currentAverage, float addition, StatType stateType)
@@ -93,9 +105,6 @@ public class Statistics : MonoBehaviour
         BothGenderRecords(blob);
 
         if (recordChildren < blob.children) recordChildren = blob.children;
-
-        var previousTotalChildrenHad = averageChildrenPerFemale * (numBlobs);
-        averageChildrenPerFemale = (previousTotalChildrenHad + 1) / (numBlobs + 1);
     }
 
     public void BothGenderRecords(BlobBehavior blob)

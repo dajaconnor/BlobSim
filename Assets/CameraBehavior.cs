@@ -204,7 +204,7 @@ public class CameraBehavior : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Comma) || Input.GetKey(KeyCode.Comma))
+        if ((Input.GetKeyDown(KeyCode.Comma) || Input.GetKey(KeyCode.Comma)) && Time.timeScale > 0.1f)
         {
             Time.timeScale -= 0.1f;
         }

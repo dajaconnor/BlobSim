@@ -48,8 +48,6 @@ namespace Assets.Utils
             newBlob.name = newBlob.gender.ToString() + "Blob";
             newBlob.parent = mother;
 
-            
-
             mother.currentIncubation = 0;
             mother.children++;
             mother.partner.children++;

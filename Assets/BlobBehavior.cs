@@ -31,7 +31,7 @@ public class BlobBehavior : MonoBehaviour
     public GenderType gender = GenderType.Male;
 
     // Dependent on size
-    internal float rotationSpeed = 10;
+    internal float rotationSpeed = 5;
 
     internal int incubatedEnergy = 0;
     bool die = false;
@@ -43,7 +43,7 @@ public class BlobBehavior : MonoBehaviour
     int energyPerFruit = 30000;
 
 
-    GameObject target;
+    GameObject food;
     BlobBehavior predator;
     BlobBehavior prey;
     internal BlobBehavior parent;
@@ -70,6 +70,7 @@ public class BlobBehavior : MonoBehaviour
 
     private Color normalColor = new Color(0.125f, 0.5f, 1);
     private Color angryColor = new Color(1, 0, 0);
+    private Color incubationColor = new Color(0, 0, 1);
     private Color scaredColor = new Color(1, 1, 0);
     private Color hungryColor = new Color(0.09375f, 0.3984375f, 0);
 
@@ -101,93 +102,97 @@ public class BlobBehavior : MonoBehaviour
 
         if (ShouldDie())
         {
-            stats.UpdateAverages(this, StatType.Death);
-            Destroy(this.gameObject);
-            Destroy(this);
+            Die();
             return;
         }
+
+        UpdateTargetReferences();
+        SetStatus();
+        Act();
 
         FixHeightBug();
-        TendColor();
-
-        if (ShouldReproduce())
-        {
-            MakeNewBlob();
-            return;
-        }
-
-        UpdateStatus();
-        CheckForPredatorAndPrey();
-
-        if (predator != null)
-        {
-            RunAway();
-            return;
-        }
-
-        if (rival != null)
-        {
-            FightRival();
-            return;
-        }
-
-        if (prey != null)
-        {
-            ChasePrey();
-            return;
-        }
-
-        if (target == null)
-        {
-            target = perception.LatestFruit;
-
-            if (target == null)
-            {
-                RandomWalk();
-                return;
-            }
-            else
-            {
-                SetSpeedAndColor(speed * jogModifier, hungryColor, BlobStatusType.Foraging);
-            }
-        }
-
-        HeadToTarget(target.transform.position);
     }
 
-    private void TendColor()
+    private void Act()
     {
-        if (!Camera.main.GetComponent<CameraBehavior>().colorToggle)
+        if (LeaveEdge()) return;
+
+        switch (status)
         {
-            GetComponent<Renderer>().material.color = normalColor;
+            case BlobStatusType.Incubating:
+                MakeNewBlob();
+                break;
+            case BlobStatusType.Fleeing:
+                RunAway();
+                break;
+            case BlobStatusType.Fighting:
+                FightRival();
+                break;
+            case BlobStatusType.Chasing:
+                HeadToTarget(prey.transform.position);
+                break;
+            case BlobStatusType.Foraging:
+                HeadToTarget(food.transform.position);
+                break;
+            case BlobStatusType.Wandering:
+                RandomWalk();
+                break;
+        }
+    }
+
+    private void Die()
+    {
+        stats.UpdateAverages(this, StatType.Death);
+        Destroy(this.gameObject);
+        Destroy(this);
+    }
+
+    private void SetStatus()
+    {
+        if (ShouldReproduce())
+        {
+            SetSpeedAndColor(currentSpeed, incubationColor, BlobStatusType.Incubating);
+            return;
+        }
+        if (predator != null)
+        {
+            if (Vector3.Distance(predator.transform.position, transform.position) > fearOfPredator) predator = null;
+
+            else
+            {
+                SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
+                return;
+            }
+        }
+        if (rival != null)
+        {
+            // collision resets rival
+            SetSpeedAndColor(speed * runModifier, angryColor, BlobStatusType.Fighting);
+            return;
+        }
+        if (prey != null)
+        {
+            if (Vector3.Distance(predator.transform.position, transform.position) > wantForPrey) prey = null;
+
+            else
+            {
+                SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
+                return;
+            }
+        }
+        if (food != null)
+        {
+            SetSpeedAndColor(speed * jogModifier, hungryColor, BlobStatusType.Foraging);
             return;
         }
 
-        if (target == null && prey == null && GetComponent<Renderer>().material.color.Equals(hungryColor))
-        {
-            GetComponent<Renderer>().material.color = normalColor;
-            return;
-        }
-
-        if (rival == null && GetComponent<Renderer>().material.color.Equals(angryColor))
-        {
-            GetComponent<Renderer>().material.color = normalColor;
-            return;
-        }
+        SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
     }
 
     private void FightRival()
     {
-        print("Heading to rival");
+        print(gameObject.GetInstanceID().ToString() + " Heading to rival " + rival.gameObject.GetInstanceID().ToString());
         HeadToTarget(rival.transform.position);
-        //var targetPosition = rival.transform.position;
-        ////targetPosition.y = ReproductionUtil.yConstant;
-        //var direction = (targetPosition - transform.position).normalized;
-        ////direction.y = 0;
-        //var lookRotation = Quaternion.LookRotation(direction);
-        //transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 0);//Time.deltaTime * rotationSpeed / aggression);
-
-        //MoveForward();
     }
 
     void OnMouseDown()
@@ -197,7 +202,7 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldReproduce()
     {
-        return ticksLived > sexualMaturity && gender.Equals(GenderType.Female) && (energy > reproductionLimit || currentIncubation > 0) && partner != null;
+        return gender.Equals(GenderType.Female) && ticksLived > sexualMaturity && (energy > reproductionLimit || currentIncubation > 0) && partner != null;
     }
 
     private void FixHeightBug()
@@ -217,24 +222,29 @@ public class BlobBehavior : MonoBehaviour
 
     private void RunAway()
     {
-        if (!LeaveEdge())
-        {
-            var targetPosition = predator.transform.position;
-            targetPosition.y = 0;
-            var lookRotation = Quaternion.LookRotation(-targetPosition);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed * Random.Range(0.1f, 1.2f));
-        }
+
+        var targetPosition = predator.transform.position;
+        transform.rotation = LookAwayFrom(targetPosition); //Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
 
         MoveForward();
     }
 
-    private void CheckForPredatorAndPrey()
+    private Quaternion LookAwayFrom(Vector3 objectToShun)
+    {
+
+        return Quaternion.LookRotation(transform.position - objectToShun);
+    }
+
+    private void UpdateTargetReferences()
     {
         energy -= (int)(perceptionWidth * perceptionDepth);
+
+        food = perception.LatestFruit;
 
         if (perception.LatestBlob != null)
         {
             var newBlob = perception.LatestBlob;
+            perception.LatestBlob = null;
 
             if (parent != null && (newBlob.Equals(parent) || (newBlob.parent != null && newBlob.parent.Equals(this)))) return;
 
@@ -242,13 +252,13 @@ public class BlobBehavior : MonoBehaviour
             {
                 predator = newBlob;
                 SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
-                target = null;
+                food = null;
             }
             else if (newBlob.size < size / predationLimit)
             {
                 prey = newBlob;
                 SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
-                target = null;
+                food = null;
             }
             else if (IsGoodPartner(newBlob))
             {
@@ -258,12 +268,10 @@ public class BlobBehavior : MonoBehaviour
             }
             else if (IsRival(newBlob))
             {
-                print("I see rival");
+                print(gameObject.GetInstanceID().ToString() + " I see rival " + newBlob.gameObject.GetInstanceID().ToString());
 
                 rival = newBlob;
                 newBlob.rival = this;
-                SetSpeedAndColor(speed * runModifier, angryColor, BlobStatusType.Fighting);
-                rival.SetSpeedAndColor(rival.speed * rival.runModifier, angryColor, BlobStatusType.Fighting);
                 LookAt(rival.transform.position);
                 rival.LookAt(transform.position);
             }
@@ -286,39 +294,6 @@ public class BlobBehavior : MonoBehaviour
         if (blob.ticksLived < sexualMaturity) return false;
 
         return partner.energy / partner.ticksLived < blob.energy / blob.ticksLived;
-    }
-
-    private void UpdateStatus()
-    {
-        if (prey != null && Vector3.Distance(prey.transform.position, transform.position) > wantForPrey)
-        {
-            prey = null;
-
-            if (predator == null && rival == null)
-            {
-                SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
-            }
-        }
-        if (predator != null && Vector3.Distance(predator.transform.position, transform.position) > fearOfPredator)
-        {
-            predator = null;
-
-            if (rival == null)
-            {
-                if (prey == null)
-                {
-                    SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
-                }
-                else
-                {
-                    SetSpeedAndColor(speed * jogModifier, hungryColor, BlobStatusType.Chasing);
-                }
-            }
-            else
-            {
-                SetSpeedAndColor(currentSpeed, angryColor, BlobStatusType.Fighting);
-            }
-        }
     }
 
     private void MakeNewBlob()
@@ -355,22 +330,17 @@ public class BlobBehavior : MonoBehaviour
 
     private void RandomWalk()
     {
-        SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
+        if (GoToRememberedPlace()) return;
 
-        if (!LeaveEdge())
+        if (Random.Range(0, 1) < 0.1)
         {
-            if (GoToRememberedPlace()) return;
 
-            if (Random.Range(0, 1) < 0.1)
-            {
+            Vector2 random2DPoint = Random.insideUnitCircle;
+            Vector3 direction = new Vector3(random2DPoint.x, 0, random2DPoint.y).normalized;
 
-                Vector2 random2DPoint = Random.insideUnitCircle;
-                Vector3 direction = new Vector3(random2DPoint.x, 0, random2DPoint.y).normalized;
+            var lookRotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed / randomRotation);
 
-                var lookRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed / randomRotation);
-
-            }
         }
 
         MoveForward();
@@ -401,13 +371,15 @@ public class BlobBehavior : MonoBehaviour
     {
         if (new Vector2(transform.position.x, transform.position.z).magnitude > ground.gameObject.transform.localScale.x * 0.48)
         {
-            LookAt(new Vector2(0, 0));
+            LookAt(new Vector3(0, 0, 0));
 
             if (predator != null || prey != null)
             {
-                if (Random.value > 0.5f) transform.Rotate(0f, 85f, 0f);
-                else transform.Rotate(0f, -85f, 0f);
+                if (Random.value > 0.5f) transform.Rotate(0f, 80f, 0f);
+                else transform.Rotate(0f, -80f, 0f);
             }
+
+            MoveForward();
 
             return true;
         }
@@ -442,10 +414,10 @@ public class BlobBehavior : MonoBehaviour
         if (triggerCollider.gameObject.name.StartsWith("Fruit"))
         {
             Destroy(triggerCollider.gameObject);
-            target = null;
+            food = null;
             energy += energyPerFruit;
             energyFromFruit += energyPerFruit;
-            UpdateStatus();
+            //UpdateStatus();
             fruitEaten++;
             stats.numFruitEaten++;
 
@@ -462,10 +434,10 @@ public class BlobBehavior : MonoBehaviour
             {
                 var deltaEnergy = (int)(energyPerFruit * targetBlob.size);
 
-                target = null;
+                food = null;
                 energy += deltaEnergy;
                 energyFromBlobs += deltaEnergy;
-                UpdateStatus();
+                //UpdateStatus();
                 targetBlob.die = true;
                 blobsEaten++;
                 stats.numBlobsEaten++;
@@ -478,7 +450,7 @@ public class BlobBehavior : MonoBehaviour
 
             if (targetBlob.Equals(rival))
             {
-                print("I fight rival");
+                print(gameObject.GetInstanceID().ToString() + " I fight rival " + rival.gameObject.GetInstanceID().ToString());
 
                 int hurtRivalAmount = (int)(size * size * size * currentSpeed * currentSpeed * aggression * 100);
                 int hurtSelfAmount = hurtRivalAmount / 2;
@@ -488,11 +460,11 @@ public class BlobBehavior : MonoBehaviour
                 energy -= (hurtSelfAmount + hurtFromRival);
                 rival.energy -= (hurtRivalAmount + hurtRivalSelf);
 
-                var newAngle = transform.eulerAngles + 180f * Vector3.up;
-                transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, newAngle, 0.1f * Time.deltaTime);
+                //var newAngle = transform.eulerAngles + 180f * Vector3.up;
+                //transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, newAngle, 0.1f * Time.deltaTime);
 
-                newAngle = rival.transform.eulerAngles + 180f * Vector3.up;
-                rival.transform.eulerAngles = Vector3.Lerp(rival.transform.eulerAngles, newAngle, 0.1f * Time.deltaTime);
+                //newAngle = rival.transform.eulerAngles + 180f * Vector3.up;
+                //rival.transform.eulerAngles = Vector3.Lerp(rival.transform.eulerAngles, newAngle, 0.1f * Time.deltaTime);
 
                 if (hurtRivalAmount > hurtFromRival && rival.partner != null && partner == null)
                 {
@@ -508,23 +480,23 @@ public class BlobBehavior : MonoBehaviour
                     partner = null;
                 }
 
-                if (rival.energy <= 0) {
+                if (rival.energy <= 0)
+                {
                     rival = null;
-                    UpdateStatus();
                 }
-                else
+                else if (energy > 0)
                 {
                     // make them flee each other after the encounter
                     predator = rival;
+                    transform.Rotate(0f, 180f, 0f);
+                    //transform.rotation = LookAwayFrom(rival.transform.position);
                     rival.predator = this;
 
-                    SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
-                    rival.SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
+                    print(gameObject.GetInstanceID().ToString() + " I flee rival " + rival.gameObject.GetInstanceID().ToString());
 
                     rival.rival = null;
                     rival = null;
 
-                    print("I flee rival");
                 }
             }
         }

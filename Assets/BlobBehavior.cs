@@ -51,7 +51,7 @@ public class BlobBehavior : MonoBehaviour
     public BlobBehavior partner;
 
     internal int currentIncubation = 0;
-    float predationLimit = 2f;
+    float predationLimit = 1.2f;
     Vector3 randomTarget;
 
 
@@ -115,29 +115,33 @@ public class BlobBehavior : MonoBehaviour
 
     private void Act()
     {
-        if (LeaveEdge()) return;
-
-        switch (status)
+        if (!LeaveEdge())
         {
-            case BlobStatusType.Incubating:
-                MakeNewBlob();
-                break;
-            case BlobStatusType.Fleeing:
-                RunAway();
-                break;
-            case BlobStatusType.Fighting:
-                FightRival();
-                break;
-            case BlobStatusType.Chasing:
-                HeadToTarget(prey.transform.position);
-                break;
-            case BlobStatusType.Foraging:
-                HeadToTarget(food.transform.position);
-                break;
-            case BlobStatusType.Wandering:
-                RandomWalk();
-                break;
+            switch (status)
+            {
+                case BlobStatusType.Incubating:
+                    MakeNewBlob();
+                    return;
+                case BlobStatusType.Fleeing:
+                    RunAway();
+                    break;
+                case BlobStatusType.Fighting:
+                    FightRival();
+                    break;
+                case BlobStatusType.Chasing:
+                    print(gameObject.GetInstanceID().ToString() + " chasing " + prey.gameObject.GetInstanceID().ToString());
+                    HeadToTarget(prey.transform.position);
+                    break;
+                case BlobStatusType.Foraging:
+                    HeadToTarget(food.transform.position);
+                    break;
+                case BlobStatusType.Wandering:
+                    RandomWalk();
+                    break;
+            }
         }
+        
+        MoveForward();
     }
 
     private void Die()
@@ -151,7 +155,7 @@ public class BlobBehavior : MonoBehaviour
     {
         if (ShouldReproduce())
         {
-            SetSpeedAndColor(currentSpeed, incubationColor, BlobStatusType.Incubating);
+            SetSpeedAndColor(speed, incubationColor, BlobStatusType.Incubating);
             return;
         }
         if (predator != null)
@@ -172,10 +176,12 @@ public class BlobBehavior : MonoBehaviour
         }
         if (prey != null)
         {
-            if (Vector3.Distance(predator.transform.position, transform.position) > wantForPrey) prey = null;
+            if (Vector3.Distance(prey.transform.position, transform.position) > wantForPrey) prey = null;
 
             else
             {
+                print(gameObject.GetInstanceID().ToString() + " chasing " + prey.gameObject.GetInstanceID().ToString());
+
                 SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
                 return;
             }
@@ -191,7 +197,7 @@ public class BlobBehavior : MonoBehaviour
 
     private void FightRival()
     {
-        print(gameObject.GetInstanceID().ToString() + " Heading to rival " + rival.gameObject.GetInstanceID().ToString());
+        if (Vector3.Dot(rival.transform.position - transform.position, transform.forward) < 0.1 || Random.value < 0.1) HeadToTarget(-rival.transform.position);
         HeadToTarget(rival.transform.position);
     }
 
@@ -215,18 +221,10 @@ public class BlobBehavior : MonoBehaviour
         return energy < 0 || die || (parent == null && ticksLived > 200000);
     }
 
-    private void ChasePrey()
-    {
-        HeadToTarget(prey.transform.position);
-    }
-
     private void RunAway()
     {
-
         var targetPosition = predator.transform.position;
         transform.rotation = LookAwayFrom(targetPosition); //Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
-
-        MoveForward();
     }
 
     private Quaternion LookAwayFrom(Vector3 objectToShun)
@@ -251,13 +249,11 @@ public class BlobBehavior : MonoBehaviour
             if (newBlob.size > size * predationLimit)
             {
                 predator = newBlob;
-                SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
                 food = null;
             }
             else if (newBlob.size < size / predationLimit)
             {
                 prey = newBlob;
-                SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
                 food = null;
             }
             else if (IsGoodPartner(newBlob))
@@ -268,8 +264,6 @@ public class BlobBehavior : MonoBehaviour
             }
             else if (IsRival(newBlob))
             {
-                print(gameObject.GetInstanceID().ToString() + " I see rival " + newBlob.gameObject.GetInstanceID().ToString());
-
                 rival = newBlob;
                 newBlob.rival = this;
                 LookAt(rival.transform.position);
@@ -324,8 +318,6 @@ public class BlobBehavior : MonoBehaviour
         direction.y = 0;
         var lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
-
-        MoveForward();
     }
 
     private void RandomWalk()
@@ -342,8 +334,6 @@ public class BlobBehavior : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed / randomRotation);
 
         }
-
-        MoveForward();
     }
 
     private bool GoToRememberedPlace()
@@ -378,8 +368,6 @@ public class BlobBehavior : MonoBehaviour
                 if (Random.value > 0.5f) transform.Rotate(0f, 80f, 0f);
                 else transform.Rotate(0f, -80f, 0f);
             }
-
-            MoveForward();
 
             return true;
         }
@@ -450,8 +438,6 @@ public class BlobBehavior : MonoBehaviour
 
             if (targetBlob.Equals(rival))
             {
-                print(gameObject.GetInstanceID().ToString() + " I fight rival " + rival.gameObject.GetInstanceID().ToString());
-
                 int hurtRivalAmount = (int)(size * size * size * currentSpeed * currentSpeed * aggression * 100);
                 int hurtSelfAmount = hurtRivalAmount / 2;
                 int hurtFromRival = (int)(rival.size * rival.size * rival.size * rival.currentSpeed * rival.currentSpeed * rival.aggression * 100);
@@ -491,9 +477,7 @@ public class BlobBehavior : MonoBehaviour
                     transform.Rotate(0f, 180f, 0f);
                     //transform.rotation = LookAwayFrom(rival.transform.position);
                     rival.predator = this;
-
-                    print(gameObject.GetInstanceID().ToString() + " I flee rival " + rival.gameObject.GetInstanceID().ToString());
-
+                    
                     rival.rival = null;
                     rival = null;
 
@@ -521,5 +505,6 @@ public class BlobBehavior : MonoBehaviour
         currentSpeed = newSpeed;
         status = newStatus;
         if (Camera.main.GetComponent<CameraBehavior>().colorToggle) GetComponent<Renderer>().material.color = newColor;
+        else GetComponent<Renderer>().material.color = normalColor;
     }
 }

@@ -40,7 +40,7 @@ public class CameraBehavior : MonoBehaviour
             if (showStats)
             {
 
-                var timespan = TimeSpan.FromTicks(target.ticksLived);
+                var timespan = TimeSpan.FromMilliseconds(target.ticksLived * 10);
                 var timeString = string.Format("{0}h{1}m{2}s",
                     timespan.Hours,
                     timespan.Minutes,

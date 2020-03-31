@@ -43,7 +43,8 @@ public class Statistics : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-
+        totalFemales = 1;
+        numBlobs = 1;
     }
 
     // Update is called once per frame

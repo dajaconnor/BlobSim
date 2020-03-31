@@ -11,43 +11,31 @@ namespace Assets.Utils
 
         public static void ReproduceBlob(BlobBehavior mother, GameObject gameObject)
         {
-            float newSize = SetNewBlobSize(MeOrMate(mother), gameObject);
-            float speedModifier = newSize * newSize;
-
             BlobBehavior newBlob = gameObject.GetComponent<BlobBehavior>();
             newBlob.generation = mother.generation + 1;
 
             newBlob.Start();
 
-            SetPerceptionFields(mother, newBlob);
-            newBlob.randomRotation = MeOrMate(mother).randomRotation * GetDrift();
-            newBlob.aggression = MeOrMate(mother).aggression * GetDrift();
-
             newBlob.transform.position = new Vector3(mother.transform.position.x, yConstant, mother.transform.position.z);
 
-            newBlob.speed = MeOrMate(mother).speed * GetDrift();
-            newBlob.jogModifier = MeOrMate(mother).jogModifier * GetDrift();
-            newBlob.runModifier = MeOrMate(mother).runModifier * GetDrift();
-            newBlob.fearOfPredator = MeOrMate(mother).fearOfPredator * GetDrift();
-            newBlob.wantForPrey = MeOrMate(mother).wantForPrey * GetDrift();
-            newBlob.childGenderRatio = MeOrMate(mother).childGenderRatio * GetDrift();
-            newBlob.incubationTicks = (int)(mother.incubationTicks * GetDrift());
-            newBlob.rotationSpeed /= speedModifier;
+            newBlob.size = SetNewBlobSize(MeOrMate(mother), gameObject);
+            RandomizeTraits(mother, newBlob);
+
+            newBlob.rotationSpeed /= newBlob.size * newBlob.size;
             newBlob.ground = mother.ground;
             newBlob.blobPrefab = mother.blobPrefab;
-            newBlob.size = newSize;
+            
             newBlob.energy = mother.incubatedEnergy;
-            newBlob.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
+
             newBlob.places = (Vector2[])mother.places.Clone();
             newBlob.latestPlace = mother.latestPlace;
-            
-            newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
+
+
 
             newBlob.gender = RandomGender(mother);
 
-            if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int) (mother.sexualMaturity * GetDrift());
-            else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());
-            
+
+
             newBlob.name = newBlob.gender.ToString() + "Blob";
             newBlob.parent = mother;
 
@@ -66,6 +54,26 @@ namespace Assets.Utils
             stats.UpdateAverages(newBlob, StatType.Birth);
         }
 
+        private static void RandomizeTraits(BlobBehavior mother, BlobBehavior newBlob)
+        {
+            SetPerceptionFields(mother, newBlob);
+            newBlob.randomRotation = MeOrMate(mother).randomRotation * GetDrift();
+            newBlob.aggression = MeOrMate(mother).aggression * GetDrift();
+            newBlob.speed = MeOrMate(mother).speed * GetDrift();
+            newBlob.jogModifier = MeOrMate(mother).jogModifier * GetDrift();
+            newBlob.runModifier = MeOrMate(mother).runModifier * GetDrift();
+            newBlob.fearOfPredator = MeOrMate(mother).fearOfPredator * GetDrift();
+            newBlob.wantForPrey = MeOrMate(mother).wantForPrey * GetDrift();
+            newBlob.childGenderRatio = MeOrMate(mother).childGenderRatio * GetDrift();
+            newBlob.incubationTicks = (int)(mother.incubationTicks * GetDrift());
+            newBlob.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
+            newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
+            newBlob.reserveEnergy = (int)(MeOrMate(mother).reserveEnergy * GetDrift());
+            newBlob.lifespan = (int)(MeOrMate(mother).lifespan * GetDrift());
+
+            if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
+            else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());
+        }
 
         private static GenderType RandomGender(BlobBehavior mother)
         {
@@ -105,7 +113,10 @@ namespace Assets.Utils
 
         private static float GetDrift()
         {
-            return Random.Range(1 - geneticDrift, 1 + geneticDrift);
+            var mutationValue = Random.value;
+            if (mutationValue > 0.01f) return Random.Range(1 - geneticDrift, 1 + geneticDrift);
+            if (mutationValue > 0.001f) return Random.Range(1 - geneticDrift * 10, 1 + geneticDrift * 10);
+            return Random.Range(1 - geneticDrift * 100, 1 + geneticDrift * 100);
         }
     }
 }

@@ -562,7 +562,7 @@ Transform:
   m_GameObject: {fileID: 1947380521}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 200, y: 0.01, z: 200}
+  m_LocalScale: {x: 100, y: 0.01, z: 100}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
@@ -595,7 +595,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b70248a43c720b43b4c7cff7362622a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numBlobs: 0
   recordBlobCount: 0
   numBlobsEaten: 0
   recordBlobsEaten: 0
@@ -620,6 +619,4 @@ MonoBehaviour:
   averageReproductionLimit: 0
   recordHighReproductionLimit: 0
   recordLowReproductionLimit: 0
-  averageChildrenPerFemale: 0
   recordChildren: 0
-  percentFemale: 0

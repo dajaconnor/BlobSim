@@ -6,7 +6,7 @@ public class FruitSpawner : MonoBehaviour
 {
 
     public GameObject fruitPrefab;
-    private int initialSpawn = 5000;
+    private int initialSpawn = 1000;
     private int ticks = 1;
 
     // Use this for initialization

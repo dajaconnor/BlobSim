@@ -9,7 +9,7 @@ public class CameraBehavior : MonoBehaviour
     public Material perceptionMaterial;
     public BlobBehavior target;
     public int fruitSpawnRate = 4;
-    public bool colorToggle = false;
+    public ColorDisplayType colorToggle = ColorDisplayType.None;
 
     int amount = 1;
     float distanceToTarget = 10;
@@ -217,7 +217,19 @@ public class CameraBehavior : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.C))
         {
-            colorToggle = !colorToggle;
+            switch (colorToggle)
+            {
+                case ColorDisplayType.None:
+                    colorToggle = ColorDisplayType.Action;
+                    break;
+                case ColorDisplayType.Action:
+                    colorToggle = ColorDisplayType.Gender;
+                    break;
+                case ColorDisplayType.Gender:
+                    colorToggle = ColorDisplayType.None;
+                    break;
+
+            }
         }
     }
 

@@ -115,8 +115,8 @@ namespace Assets.Utils
         {
             var mutationValue = Random.value;
             if (mutationValue > 0.01f) return Random.Range(1 - geneticDrift, 1 + geneticDrift);
-            if (mutationValue > 0.001f) return Random.Range(1 - geneticDrift * 10, 1 + geneticDrift * 10);
-            return Random.Range(1 - geneticDrift * 100, 1 + geneticDrift * 100);
+            if (mutationValue > 0.001f) return Random.Range((1 - geneticDrift) / 10, (1 - geneticDrift) * 10);
+            return Random.Range((1 - geneticDrift) / 100, (1 - geneticDrift) * 100);
         }
     }
 }

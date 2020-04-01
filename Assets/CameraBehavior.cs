@@ -205,14 +205,14 @@ public class CameraBehavior : MonoBehaviour
             }
         }
 
-        if ((Input.GetKeyDown(KeyCode.Comma) || Input.GetKey(KeyCode.Comma)) && Time.timeScale > 0.1f)
+        if (Input.GetKey(KeyCode.Comma) && Time.timeScale > 0.05f)
         {
-            Time.timeScale -= 0.1f;
+            Time.timeScale -= 0.05f;
         }
 
-        if (Input.GetKeyDown(KeyCode.Period) || Input.GetKey(KeyCode.Period))
+        if (Input.GetKey(KeyCode.Period))
         {
-            Time.timeScale += 0.1f;
+            Time.timeScale += 0.05f;
         }
 
         if (Input.GetKeyDown(KeyCode.C))

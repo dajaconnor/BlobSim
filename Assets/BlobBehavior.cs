@@ -9,6 +9,7 @@ public class BlobBehavior : MonoBehaviour
     public GameObject ground;
     public PerceptionBehavior perception;
     public GameObject blobPrefab;
+    public GameObject fruitPrefab;
 
     // Things that evolve
     internal float size = 1;
@@ -29,7 +30,7 @@ public class BlobBehavior : MonoBehaviour
     internal float aggression = 10f;
     internal int sexualMaturity = 1000;
     internal int reserveEnergy = 100000;
-    internal int lifespan = 45000;
+    //internal int lifespan = 45000;
 
 
     internal BlobStatusType status = BlobStatusType.Wandering;
@@ -121,13 +122,15 @@ public class BlobBehavior : MonoBehaviour
 
     private void Act()
     {
+        if (ShouldReproduce())
+        {
+            MakeNewBlob();
+        }
+
         if (!LeaveEdge())
         {
             switch (status)
             {
-                case BlobStatusType.Incubating:
-                    MakeNewBlob();
-                    return;
                 case BlobStatusType.Providing:
 
                     SlowToTarget(partner.transform.position);
@@ -141,7 +144,6 @@ public class BlobBehavior : MonoBehaviour
                     FightRival();
                     break;
                 case BlobStatusType.Chasing:
-                    print(gameObject.GetInstanceID().ToString() + " chasing " + prey.gameObject.GetInstanceID().ToString());
                     HeadToTarget(prey.transform.position);
                     break;
                 case BlobStatusType.Foraging:
@@ -152,6 +154,7 @@ public class BlobBehavior : MonoBehaviour
 
                     break;
                 case BlobStatusType.Wandering:
+                default:
                     RandomWalk();
                     break;
             }
@@ -175,27 +178,24 @@ public class BlobBehavior : MonoBehaviour
     private void Die()
     {
         stats.UpdateAverages(this, StatType.Death);
+        if (!die)
+        {
+            var fruit = Instantiate(fruitPrefab, transform.position, transform.rotation);
+            fruit.name = "Fruit";
+        }
         Destroy(this.gameObject);
         Destroy(this);
     }
 
     private void SetStatus()
     {
-        if (gender.Equals(GenderType.Female)) { 
-            if (ShouldReproduce())
-            {
-                SetSpeedAndColor(speed, incubationColor, BlobStatusType.Incubating);
-                return;
-            }
-        }
-        else
+
+        if (ShouldProvide())
         {
-            if (ShouldProvide())
-            {
-                SetSpeedAndColor(speed, incubationColor, BlobStatusType.Providing);
-                return;
-            }
+            SetSpeedAndColor(speed * runModifier, incubationColor, BlobStatusType.Providing);
+            return;
         }
+        
         if (predator != null)
         {
             if (Vector3.Distance(predator.transform.position, transform.position) > fearOfPredator) predator = null;
@@ -206,11 +206,11 @@ public class BlobBehavior : MonoBehaviour
                 return;
             }
         }
-        if (gender.Equals(GenderType.Female) && partner != null && partner.status.Equals(BlobStatusType.Providing))
-        {
-            SetSpeedAndColor(speed / 8, normalColor, BlobStatusType.Wandering);
-            return;
-        }
+        //if (gender.Equals(GenderType.Female) && partner != null && partner.partner.Equals(this) && partner.status.Equals(BlobStatusType.Providing))
+        //{
+        //    SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
+        //    return;
+        //}
         if (rival != null)
         {
             // collision resets rival
@@ -223,8 +223,6 @@ public class BlobBehavior : MonoBehaviour
 
             else
             {
-                print(gameObject.GetInstanceID().ToString() + " chasing " + prey.gameObject.GetInstanceID().ToString());
-
                 SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
                 return;
             }
@@ -240,7 +238,12 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldProvide()
     {
-        return partner != null && !partner.status.Equals(BlobStatusType.Incubating) && partner.energy < partner.reproductionLimit && energy > reserveEnergy;
+        return gender.Equals(GenderType.Male) 
+            && energy > reserveEnergy * 2 
+            && partner != null 
+            && partner.partner != null
+            && partner.partner.Equals(this) && 
+            !partner.ShouldReproduce();
     }
 
     private void FightRival()
@@ -266,7 +269,7 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldDie()
     {
-        return energy < 0 || die || lifespan < ticksLived;
+        return energy < 0 || die;
     }
 
     private void RunAway()
@@ -523,7 +526,7 @@ public class BlobBehavior : MonoBehaviour
 
             if (targetBlob.Equals(partner) && status.Equals(BlobStatusType.Providing) && energy > reserveEnergy)
             {
-                var energyToProvide = reserveEnergy - energy;
+                var energyToProvide = Math.Abs(reserveEnergy - energy);
                 energy -= energyToProvide;
                 partner.energy += energyToProvide;
             }

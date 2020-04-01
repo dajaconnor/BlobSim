@@ -69,7 +69,7 @@ namespace Assets.Utils
             newBlob.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
             newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
             newBlob.reserveEnergy = (int)(MeOrMate(mother).reserveEnergy * GetDrift());
-            newBlob.lifespan = (int)(MeOrMate(mother).lifespan * GetDrift());
+            //newBlob.lifespan = (int)(MeOrMate(mother).lifespan * GetDrift());
 
             if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
             else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());

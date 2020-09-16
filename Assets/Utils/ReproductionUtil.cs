@@ -54,6 +54,21 @@ namespace Assets.Utils
             stats.UpdateAverages(newBlob, StatType.Birth);
         }
 
+        public static void GerminateTree(TreeGenes genes, Vector3 position, GameObject gameObject, GameObject fruitPrefab)
+        {
+            TreeBehavior newTree = gameObject.GetComponent<TreeBehavior>();
+            newTree.fruitPrefab = fruitPrefab;
+            newTree.transform.position = new Vector3(position.x, 0, position.z);
+            newTree.transform.rotation = Quaternion.Euler(Vector3.up * Random.Range(0, 360));
+            newTree.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
+            newTree.Start();
+
+            newTree.growDropRatio = genes.growDropRatio * GetDrift();
+            newTree.lifespan =  (int)(genes.lifespan * GetDrift());
+            newTree.age = 0;
+            
+        }
+
         private static void RandomizeTraits(BlobBehavior mother, BlobBehavior newBlob)
         {
             SetPerceptionFields(mother, newBlob);
@@ -69,6 +84,8 @@ namespace Assets.Utils
             newBlob.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
             newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
             newBlob.reserveEnergy = (int)(MeOrMate(mother).reserveEnergy * GetDrift());
+            newBlob.jogRotationModifier = MeOrMate(mother).jogRotationModifier * GetDrift();
+            newBlob.runRotationModifier = MeOrMate(mother).runRotationModifier * GetDrift();
             //newBlob.lifespan = (int)(MeOrMate(mother).lifespan * GetDrift());
 
             if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
@@ -116,7 +133,7 @@ namespace Assets.Utils
             var mutationValue = Random.value;
             if (mutationValue > 0.01f) return Random.Range(1 - geneticDrift, 1 + geneticDrift);
             if (mutationValue > 0.001f) return Random.Range((1 - geneticDrift) / 10, (1 - geneticDrift) * 10);
-            return Random.Range((1 - geneticDrift) / 100, (1 - geneticDrift) * 100);
+            return Random.Range((1 - geneticDrift) / 25, (1 - geneticDrift) * 25);
         }
     }
 }

@@ -21,8 +21,6 @@ public class FruitSpawner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-
         if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
         {
             SpawnRandomFruit();
@@ -58,11 +56,18 @@ public class FruitSpawner : MonoBehaviour
     private void SpawnRandomFruit()
     {
         Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(transform.localScale.x / 2 * 0.95f);
-        Vector3 randomSpawnRotation = Vector3.up * Random.Range(0, 360);
-
-        var fruit = Instantiate(fruitPrefab, randomSpawnPosition, Quaternion.Euler(randomSpawnRotation));
-        fruit.name = "Fruit";
+        
+        MakeFruit(randomSpawnPosition, fruitPrefab);
     }
 
+    public static FruitBehavior MakeFruit(Vector3 spawnPosition, GameObject fruitPrefab)
+    {
+        if (!LocationUtil.IsOnMap(spawnPosition)) return null;
 
+        Vector3 randomSpawnRotation = Vector3.up * Random.Range(0, 360);
+        var fruit = Instantiate(fruitPrefab, spawnPosition, Quaternion.Euler(randomSpawnRotation));
+        fruit.name = "Fruit";
+
+        return fruit.GetComponent<FruitBehavior>();
+    }
 }

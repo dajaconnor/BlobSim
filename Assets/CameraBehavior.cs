@@ -8,7 +8,7 @@ public class CameraBehavior : MonoBehaviour
     public GameObject ground;
     public Material perceptionMaterial;
     public BlobBehavior target;
-    public int fruitSpawnRate = 4;
+    public int fruitSpawnRate = 8;
     public ColorDisplayType colorToggle = ColorDisplayType.None;
 
     int amount = 1;
@@ -291,22 +291,22 @@ public class CameraBehavior : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.E))
         {
-            transform.Rotate(new Vector3(0, amount, 0));
+            transform.Rotate(new Vector3(0, amount*2, 0));
         }
 
         if (Input.GetKey(KeyCode.Q))
         {
-            transform.Rotate(new Vector3(0, -amount, 0));
+            transform.Rotate(new Vector3(0, -amount*2, 0));
         }
 
         if (Input.GetKey(KeyCode.R))
         {
-            transform.Rotate(new Vector3(amount, 0, 0));
+            transform.Rotate(new Vector3(amount*2, 0, 0));
         }
 
         if (Input.GetKey(KeyCode.F))
         {
-            transform.Rotate(new Vector3(-amount, 0, 0));
+            transform.Rotate(new Vector3(-amount*2, 0, 0));
         }
 
         Vector3 eulerRotation = transform.rotation.eulerAngles;

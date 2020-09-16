@@ -1,6 +1,8 @@
 ﻿using System;
+using Assets;
 using Assets.Enums;
 using Assets.Utils;
+using BlobSimulation.Utils;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -10,6 +12,7 @@ public class BlobBehavior : MonoBehaviour
     public PerceptionBehavior perception;
     public GameObject blobPrefab;
     public GameObject fruitPrefab;
+    public GameObject treePrefab;
 
     // Things that evolve
     internal float size = 1;
@@ -19,6 +22,8 @@ public class BlobBehavior : MonoBehaviour
     internal float speed = 4;
     internal float jogModifier = 2;
     internal float runModifier = 3;
+    internal float jogRotationModifier = 1.25f;
+    internal float runRotationModifier = 1.5f;
     internal float randomRotation = 5;
     internal float fearOfPredator = 5;
     internal float wantForPrey = 5;
@@ -30,6 +35,8 @@ public class BlobBehavior : MonoBehaviour
     internal float aggression = 10f;
     internal int sexualMaturity = 1000;
     internal int reserveEnergy = 100000;
+    internal TreeGenes seedInPoop;
+    internal float poopChance = 0.01f;
     //internal int lifespan = 45000;
 
 
@@ -38,6 +45,7 @@ public class BlobBehavior : MonoBehaviour
 
     // Dependent on size
     internal float rotationSpeed = 5;
+    internal float currentRotationSpeed = 5;
 
     internal int incubatedEnergy = 0;
     bool die = false;
@@ -46,7 +54,7 @@ public class BlobBehavior : MonoBehaviour
     internal int energy = 100000;
 
 
-    int energyPerFruit = 30000;
+    int energyPerFruit = 10000;
 
 
     GameObject food;
@@ -59,7 +67,6 @@ public class BlobBehavior : MonoBehaviour
     internal int currentIncubation = 0;
     float predationLimit = 1.3f;
     float mateLimit = 1.1f;
-    Vector3 randomTarget;
 
 
     // stats
@@ -155,6 +162,7 @@ public class BlobBehavior : MonoBehaviour
                     break;
                 case BlobStatusType.Wandering:
                 default:
+                    RandomPoop();
                     RandomWalk();
                     break;
             }
@@ -162,7 +170,25 @@ public class BlobBehavior : MonoBehaviour
         
         MoveForward();
     }
-    
+
+    private void RandomPoop()
+    {
+        if (seedInPoop == null) return;
+
+        if (Random.value < poopChance)
+        {
+            if (LocationUtil.IsInShade(transform.position))
+            {
+                seedInPoop = null;
+                return;
+            }
+
+            GameObject newGameObject = Instantiate(treePrefab, transform.position, transform.rotation);
+            ReproductionUtil.GerminateTree(seedInPoop, transform.position, newGameObject, fruitPrefab);
+            seedInPoop = null;
+        }
+    }
+
     private float SlowToTarget(Vector3 targetPosition)
     {
         var distanceToTarget = Vector3.Distance(targetPosition, transform.position);
@@ -180,8 +206,7 @@ public class BlobBehavior : MonoBehaviour
         stats.UpdateAverages(this, StatType.Death);
         if (!die)
         {
-            var fruit = Instantiate(fruitPrefab, transform.position, transform.rotation);
-            fruit.name = "Fruit";
+            FruitSpawner.MakeFruit(transform.position, fruitPrefab);
         }
         Destroy(this.gameObject);
         Destroy(this);
@@ -192,7 +217,7 @@ public class BlobBehavior : MonoBehaviour
 
         if (ShouldProvide())
         {
-            SetSpeedAndColor(speed * runModifier, incubationColor, BlobStatusType.Providing);
+            SetSpeedAndColor(BlobSpeedType.Running, incubationColor, BlobStatusType.Providing);
             return;
         }
         
@@ -202,19 +227,14 @@ public class BlobBehavior : MonoBehaviour
 
             else
             {
-                SetSpeedAndColor(speed * runModifier, scaredColor, BlobStatusType.Fleeing);
+                SetSpeedAndColor(BlobSpeedType.Running, scaredColor, BlobStatusType.Fleeing);
                 return;
             }
         }
-        //if (gender.Equals(GenderType.Female) && partner != null && partner.partner.Equals(this) && partner.status.Equals(BlobStatusType.Providing))
-        //{
-        //    SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
-        //    return;
-        //}
         if (rival != null)
         {
             // collision resets rival
-            SetSpeedAndColor(speed * runModifier, angryColor, BlobStatusType.Fighting);
+            SetSpeedAndColor(BlobSpeedType.Running, angryColor, BlobStatusType.Fighting);
             return;
         }
         if (prey != null)
@@ -223,17 +243,17 @@ public class BlobBehavior : MonoBehaviour
 
             else
             {
-                SetSpeedAndColor(speed * runModifier, hungryColor, BlobStatusType.Chasing);
+                SetSpeedAndColor(BlobSpeedType.Running, hungryColor, BlobStatusType.Chasing);
                 return;
             }
         }
         if (food != null)
         {
-            SetSpeedAndColor(speed * jogModifier, hungryColor, BlobStatusType.Foraging);
+            SetSpeedAndColor(BlobSpeedType.Jogging, hungryColor, BlobStatusType.Foraging);
             return;
         }
 
-        SetSpeedAndColor(speed, normalColor, BlobStatusType.Wandering);
+        SetSpeedAndColor(BlobSpeedType.Walking, normalColor, BlobStatusType.Wandering);
     }
 
     private bool ShouldProvide()
@@ -367,22 +387,25 @@ public class BlobBehavior : MonoBehaviour
         targetPosition.y = 0;
         var direction = (targetPosition - transform.position).normalized;
         direction.y = 0;
+
+        if (direction.Equals(Vector3.zero)) return;
+
         var lookRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * currentRotationSpeed);
+        energy -= (int)(size * size * size * currentRotationSpeed * currentRotationSpeed);
     }
 
     private void RandomWalk()
     {
         if (GoToRememberedPlace()) return;
 
-        if (Random.Range(0, 1) < 0.1)
+        if (Random.Range(0f, 1f) < 0.1)
         {
-
             Vector2 random2DPoint = Random.insideUnitCircle;
             Vector3 direction = new Vector3(random2DPoint.x, 0, random2DPoint.y).normalized;
 
             var lookRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed / randomRotation);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * currentRotationSpeed / randomRotation);
 
         }
     }
@@ -410,7 +433,7 @@ public class BlobBehavior : MonoBehaviour
 
     private bool LeaveEdge()
     {
-        if (new Vector2(transform.position.x, transform.position.z).magnitude > ground.gameObject.transform.localScale.x * 0.48)
+        if (!LocationUtil.IsOnMap(transform.position))
         {
             LookAt(new Vector3(0, 0, 0));
 
@@ -450,6 +473,8 @@ public class BlobBehavior : MonoBehaviour
     {
         if (triggerCollider.gameObject.name.StartsWith("Fruit"))
         {
+            seedInPoop = triggerCollider.gameObject.GetComponent<FruitBehavior>().genes;
+
             Destroy(triggerCollider.gameObject);
             food = null;
             energy += energyPerFruit;
@@ -547,9 +572,10 @@ public class BlobBehavior : MonoBehaviour
         return latestPlace;
     }
 
-    private void SetSpeedAndColor(float newSpeed, Color newColor, BlobStatusType newStatus)
+    private void SetSpeedAndColor(BlobSpeedType speedType, Color newColor, BlobStatusType newStatus)
     {
-        currentSpeed = newSpeed;
+        currentSpeed = GetCurrentSpeed(speedType);
+        currentRotationSpeed = GetCurrentRotation(speedType);
         status = newStatus;
         var colorType = Camera.main.GetComponent<CameraBehavior>().colorToggle;
 
@@ -561,5 +587,29 @@ public class BlobBehavior : MonoBehaviour
             else GetComponent<Renderer>().material.color = femaleColor;
 
         }
+    }
+
+    private float GetCurrentSpeed(BlobSpeedType speedType)
+    {
+        switch (speedType)
+        {
+            case BlobSpeedType.Walking: return speed;
+            case BlobSpeedType.Jogging: return speed * jogModifier;
+            case BlobSpeedType.Running: return speed * runModifier;
+        }
+
+        return speed;
+    }
+
+    private float GetCurrentRotation(BlobSpeedType speedType)
+    {
+        switch (speedType)
+        {
+            case BlobSpeedType.Walking: return rotationSpeed;
+            case BlobSpeedType.Jogging: return rotationSpeed * jogRotationModifier;
+            case BlobSpeedType.Running: return rotationSpeed * runRotationModifier;
+        }
+
+        return rotationSpeed;
     }
 }

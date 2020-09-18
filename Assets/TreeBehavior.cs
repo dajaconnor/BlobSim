@@ -9,24 +9,30 @@ public class TreeBehavior : MonoBehaviour
     private float growthRate = 0.001f;
     internal float growDropRatio = 0.5f;
     internal int lifespan = 100000;
-    internal int age = 1000;
+    internal int age = 50000;
     internal TreeBehavior closestTree;
+
+    internal int fastGrowTime = 250;
+    internal int mediumGrowTime = 250;
+    internal int slowGrowTime = 500;
+    private bool isOnMap = true;
 
     // Start is called before the first frame update
     internal void Start()
     {
         closestTree = FindClosestTree();
+        isOnMap = LocationUtil.IsOnMap(transform.position);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (age < 250) Grow();
-        else if (age < 500)
+        if (age < fastGrowTime) Grow();
+        else if (age < fastGrowTime + mediumGrowTime)
         {
             if (age % 2 == 0) Grow();
         }
-        else if (age < 100)
+        else if (age < fastGrowTime + mediumGrowTime + slowGrowTime)
         {
             if (age % 5 == 0) Grow();
         }
@@ -37,7 +43,7 @@ public class TreeBehavior : MonoBehaviour
             {
                 Grow();
             }
-            else if (age % 50 == 0)
+            else if (age % 500 == 0)
             {
                 DropFruit();
             }
@@ -110,7 +116,7 @@ public class TreeBehavior : MonoBehaviour
         if (closestTree == null) return false;
 
         var distance = DistanceTo(this, closestTree);
-        var shadeRadius = transform.localScale.x * 5;
+        var shadeRadius = transform.localScale.x * 4;
 
         return closestTree != null && distance < shadeRadius;
     }
@@ -124,8 +130,10 @@ public class TreeBehavior : MonoBehaviour
         }
     }
 
-    private void DropFruit()
+    public void DropFruit()
     {
+        if (!isOnMap) return;
+
         Vector3 randomSpawnPosition = LocationUtil.GetRandomSpotAroundPosition(transform.localScale.x * 3, transform.position);
 
         var fruit = FruitSpawner.MakeFruit(randomSpawnPosition, fruitPrefab);
@@ -134,6 +142,6 @@ public class TreeBehavior : MonoBehaviour
         // pass those genes along!
         // genetic drift will happen on germination, not here
         fruit.gestation = lifespan / 100;
-        fruit.genes = new TreeGenes(growDropRatio, lifespan);
+        fruit.genes = new TreeGenes(growDropRatio, lifespan, fastGrowTime, mediumGrowTime, slowGrowTime);
     }
 }

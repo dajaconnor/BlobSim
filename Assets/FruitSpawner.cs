@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using BlobSimulation.Utils;
 using Random = UnityEngine.Random;
+using System.Linq;
 
 public class FruitSpawner : MonoBehaviour
 {
@@ -8,24 +9,33 @@ public class FruitSpawner : MonoBehaviour
     public GameObject fruitPrefab;
     private int initialSpawn = 1000;
     private int ticks = 1;
+    private TreeBehavior firstTree;
 
     // Use this for initialization
     void Start()
     {
+        firstTree = Object.FindObjectsOfType<TreeBehavior>().First();
+
         for (var i = 0; i < initialSpawn; i++)
         {
-            SpawnRandomFruit();
+            firstTree.DropFruit();
         }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (ticks < 1000) firstTree.DropFruit();
+
         if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
         {
             SpawnRandomFruit();
         }
 
+        if (ticks % 2000 == 0)
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
+        }
 
         ticks++;
 
@@ -55,7 +65,7 @@ public class FruitSpawner : MonoBehaviour
 
     private void SpawnRandomFruit()
     {
-        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(transform.localScale.x / 2 * 0.95f);
+        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(50);
         
         MakeFruit(randomSpawnPosition, fruitPrefab);
     }
@@ -64,6 +74,7 @@ public class FruitSpawner : MonoBehaviour
     {
         if (!LocationUtil.IsOnMap(spawnPosition)) return null;
 
+        spawnPosition = new Vector3(spawnPosition.x, LocationUtil.groundHeight, spawnPosition.z);
         Vector3 randomSpawnRotation = Vector3.up * Random.Range(0, 360);
         var fruit = Instantiate(fruitPrefab, spawnPosition, Quaternion.Euler(randomSpawnRotation));
         fruit.name = "Fruit";

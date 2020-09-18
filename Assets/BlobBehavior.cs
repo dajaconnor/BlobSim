@@ -29,7 +29,7 @@ public class BlobBehavior : MonoBehaviour
     internal float wantForPrey = 5;
     internal int incubationTicks = 100;
     internal int reproductionLimit = 100000;
-    internal float useMemoryPercent = 0.25f;
+    internal float useMemoryPercent = 0.10f;
     internal int generation = 0;
     internal float childGenderRatio = 0.5f;
     internal float aggression = 10f;
@@ -54,7 +54,8 @@ public class BlobBehavior : MonoBehaviour
     internal int energy = 100000;
 
 
-    int energyPerFruit = 10000;
+    int energyPerFruit = 40000;
+    int energyPerTreeFruit = 1000;
 
 
     GameObject food;
@@ -134,38 +135,35 @@ public class BlobBehavior : MonoBehaviour
             MakeNewBlob();
         }
 
-        if (!LeaveEdge())
+        switch (status)
         {
-            switch (status)
-            {
-                case BlobStatusType.Providing:
+            case BlobStatusType.Providing:
 
-                    SlowToTarget(partner.transform.position);
+                SlowToTarget(partner.transform.position);
 
-                    HeadToTarget(partner.transform.position);
-                    break;
-                case BlobStatusType.Fleeing:
-                    RunAway();
-                    break;
-                case BlobStatusType.Fighting:
-                    FightRival();
-                    break;
-                case BlobStatusType.Chasing:
-                    HeadToTarget(prey.transform.position);
-                    break;
-                case BlobStatusType.Foraging:
+                HeadToTarget(partner.transform.position);
+                break;
+            case BlobStatusType.Fleeing:
+                RunAway();
+                break;
+            case BlobStatusType.Fighting:
+                FightRival();
+                break;
+            case BlobStatusType.Chasing:
+                HeadToTarget(prey.transform.position);
+                break;
+            case BlobStatusType.Foraging:
 
-                    SlowToTarget(food.transform.position);
+                SlowToTarget(food.transform.position);
 
-                    HeadToTarget(food.transform.position);
+                HeadToTarget(food.transform.position);
 
-                    break;
-                case BlobStatusType.Wandering:
-                default:
-                    RandomPoop();
-                    RandomWalk();
-                    break;
-            }
+                break;
+            case BlobStatusType.Wandering:
+            default:
+                RandomPoop();
+                RandomWalk();
+                break;
         }
         
         MoveForward();
@@ -179,7 +177,6 @@ public class BlobBehavior : MonoBehaviour
         {
             if (LocationUtil.IsInShade(transform.position))
             {
-                seedInPoop = null;
                 return;
             }
 
@@ -295,6 +292,7 @@ public class BlobBehavior : MonoBehaviour
     private void RunAway()
     {
         var targetPosition = predator.transform.position;
+        targetPosition += new Vector3(Random.Range(-0.3f, 0.3f), 0, Random.Range(-0.3f, 0.3f));
         transform.rotation = LookAwayFrom(targetPosition); //Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
     }
 
@@ -308,7 +306,7 @@ public class BlobBehavior : MonoBehaviour
     {
         energy -= (int)(perceptionWidth * perceptionDepth);
 
-        food = perception.LatestFruit;
+        if (food == null) food = perception.LatestFruit;
 
         if (perception.LatestBlob != null)
         {
@@ -327,7 +325,7 @@ public class BlobBehavior : MonoBehaviour
                 prey = newBlob;
                 food = null;
             }
-            else if (IsGoodPartner(newBlob))
+            else if (IsGoodPartner(newBlob, false))
             {
                 if (partner != null) partner.partner = null;
                 partner = newBlob;
@@ -346,13 +344,16 @@ public class BlobBehavior : MonoBehaviour
     private bool IsRival(BlobBehavior newBlob)
     {
         // must both be male, and need to steal their partner
-        return (gender == GenderType.Male && newBlob.gender == GenderType.Male && partner == null & newBlob.partner != null && rival == null && newBlob.rival == null && IsGoodPartner(newBlob.partner));
+        return (gender == GenderType.Male && newBlob.gender == GenderType.Male && partner == null & newBlob.partner != null && rival == null && newBlob.rival == null && IsGoodPartner(newBlob.partner, true));
     }
 
-    private bool IsGoodPartner(BlobBehavior blob)
+    private bool IsGoodPartner(BlobBehavior blob, bool checkingRivalry)
     {
-        // girls pick boys
-        if (gender == GenderType.Male || blob.gender == GenderType.Female || blob.size / size > mateLimit || size / blob.size > mateLimit) return false;
+        // girls pick boys unless it's a rivalry
+        if ((gender == GenderType.Male || blob.gender == GenderType.Female) && !checkingRivalry) return false;
+
+        // check size
+        if (blob.size / size > mateLimit || size / blob.size > mateLimit) return false;
         if (partner == null || partner == this) return true;
 
         if (partner.ticksLived == 0) return true;
@@ -431,24 +432,6 @@ public class BlobBehavior : MonoBehaviour
         return places[i];
     }
 
-    private bool LeaveEdge()
-    {
-        if (!LocationUtil.IsOnMap(transform.position))
-        {
-            LookAt(new Vector3(0, 0, 0));
-
-            if (predator != null || prey != null)
-            {
-                if (Random.value > 0.5f) transform.Rotate(0f, 80f, 0f);
-                else transform.Rotate(0f, -80f, 0f);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
     private void LookAt(Vector2 targetCoords)
     {
         var targetPosition = new Vector3(targetCoords.x, 0, targetCoords.y);
@@ -473,12 +456,23 @@ public class BlobBehavior : MonoBehaviour
     {
         if (triggerCollider.gameObject.name.StartsWith("Fruit"))
         {
-            seedInPoop = triggerCollider.gameObject.GetComponent<FruitBehavior>().genes;
+            var fruit = triggerCollider.gameObject.GetComponent<FruitBehavior>();
+            seedInPoop = fruit.genes;
 
-            Destroy(triggerCollider.gameObject);
+            if (fruit.genes == null)
+            {
+                energy += energyPerFruit;
+                energyFromFruit += energyPerFruit;
+            } else
+            {
+                energy += energyPerTreeFruit;
+                energyFromFruit += energyPerTreeFruit;
+            }
+
+            Destroy(fruit.gameObject);
+            Destroy(fruit);
             food = null;
-            energy += energyPerFruit;
-            energyFromFruit += energyPerFruit;
+            
             fruitEaten++;
             stats.numFruitEaten++;
 
@@ -487,7 +481,7 @@ public class BlobBehavior : MonoBehaviour
             RememberThisPlace();
         }
 
-        if (triggerCollider.gameObject.name.StartsWith("Percepticon"))
+        else if (triggerCollider.gameObject.name.StartsWith("Percepticon"))
         {
             var targetBlob = triggerCollider.gameObject.GetComponentInParent<BlobBehavior>();
 
@@ -514,10 +508,29 @@ public class BlobBehavior : MonoBehaviour
                 int hurtSelfAmount = hurtRivalAmount / 2;
                 int hurtFromRival = (int)(rival.size * rival.size * rival.size * rival.currentSpeed * rival.currentSpeed * rival.aggression * 100);
                 int hurtRivalSelf = hurtFromRival / 2;
+                int totalSelfHurt = hurtSelfAmount + hurtFromRival;
+                int totalRivalHurt = hurtRivalAmount + hurtRivalSelf;
 
-                energy -= (hurtSelfAmount + hurtFromRival);
-                rival.energy -= (hurtRivalAmount + hurtRivalSelf);
+                if (totalSelfHurt > energy && totalRivalHurt > rival.energy)
+                {
+                    if (energy > rival.energy)
+                    {
+                        energy -= rival.energy;
+                        rival.energy = 0;
+                    }
+                    else
+                    {
+                        rival.energy -= energy;
+                        energy = 0;
+                    }
+                }
+                else
+                {
+                    energy -= totalSelfHurt;
+                    rival.energy -= totalRivalHurt;
+                }
                 
+
                 if (hurtRivalAmount > hurtFromRival && rival.partner != null && partner == null)
                 {
                     rival.partner.partner = this;
@@ -556,6 +569,17 @@ public class BlobBehavior : MonoBehaviour
                 partner.energy += energyToProvide;
             }
         }
+
+        //else if (triggerCollider.gameObject.name.StartsWith("Tree"))
+        //{
+        //    var targetTree = triggerCollider.gameObject.GetComponentInParent<TreeBehavior>();
+
+        //    if (targetTree.transform.localScale.x < size)
+        //    {
+        //        Destroy(targetTree.gameObject);
+        //        Destroy(targetTree);
+        //    }
+        //}
     }
 
     private void RememberThisPlace()

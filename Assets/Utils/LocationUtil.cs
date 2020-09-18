@@ -5,17 +5,19 @@ namespace BlobSimulation.Utils
 {
     public static class LocationUtil
     {
+        public static float groundHeight = 0.18f;
+
         public static Vector3 GetRandomSpot(float spawnRadius)
         {
             Vector2 random2DPoint = Random.insideUnitCircle;
-            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius, 0.18f, random2DPoint.y * spawnRadius);
+            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius, groundHeight, random2DPoint.y * spawnRadius);
             return randomSpawnPosition;
         }
 
         public static Vector3 GetRandomSpotAroundPosition(float spawnRadius, Vector3 position)
         {
             Vector2 random2DPoint = Random.insideUnitCircle;
-            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius + position.x, 0.18f, random2DPoint.y * spawnRadius + position.z);
+            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius + position.x, groundHeight, random2DPoint.y * spawnRadius + position.z);
             return randomSpawnPosition;
         }
 

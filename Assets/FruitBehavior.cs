@@ -10,7 +10,7 @@ public class FruitBehavior : MonoBehaviour
     public int gestation = 100;
     public TreeGenes genes;
     private int age = 0;
-    private bool sterile = true;
+    public bool isSterile = true;
 
     void Start()
     {
@@ -20,7 +20,7 @@ public class FruitBehavior : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (sterile) return;
+        if (isSterile) return;
 
         age++;
 
@@ -34,7 +34,7 @@ public class FruitBehavior : MonoBehaviour
     {
         if (genes == null || LocationUtil.IsInShade(transform.position))
         {
-            sterile = true;
+            isSterile = true;
             return;
         }
 

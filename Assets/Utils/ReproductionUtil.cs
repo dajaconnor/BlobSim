@@ -19,6 +19,10 @@ namespace Assets.Utils
             newBlob.transform.position = new Vector3(mother.transform.position.x, yConstant, mother.transform.position.z);
 
             newBlob.size = SetNewBlobSize(MeOrMate(mother), gameObject);
+
+            // compensate for size of baby
+            mother.energy += (int) (100000 * (mother.size - newBlob.size));
+
             RandomizeTraits(mother, newBlob);
 
             newBlob.rotationSpeed /= newBlob.size * newBlob.size;
@@ -65,6 +69,9 @@ namespace Assets.Utils
 
             newTree.growDropRatio = genes.growDropRatio * GetDrift();
             newTree.lifespan =  (int)(genes.lifespan * GetDrift());
+            newTree.fastGrowTime = (int)(genes.fastGrowTime * GetDrift());
+            newTree.mediumGrowTime = (int)(genes.mediumGrowTime * GetDrift());
+            newTree.slowGrowTime = (int)(genes.slowGrowTime * GetDrift());
             newTree.age = 0;
             
         }

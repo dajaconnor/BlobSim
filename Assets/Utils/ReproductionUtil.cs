@@ -1,4 +1,5 @@
 ﻿using Assets.Enums;
+using BlobSimulation.Utils;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -7,7 +8,6 @@ namespace Assets.Utils
     public static class ReproductionUtil
     {
         private static float geneticDrift = 0.1f;
-        public static float yConstant = 0.47f;
 
         public static void ReproduceBlob(BlobBehavior mother, GameObject gameObject)
         {
@@ -16,7 +16,7 @@ namespace Assets.Utils
 
             newBlob.Start();
 
-            newBlob.transform.position = new Vector3(mother.transform.position.x, yConstant, mother.transform.position.z);
+            newBlob.transform.position = new Vector3(mother.transform.position.x, LocationUtil.GetHeight(mother.transform.position) + BlobBehavior.heightAdjust, mother.transform.position.z);
 
             newBlob.size = SetNewBlobSize(MeOrMate(mother), gameObject);
 
@@ -62,7 +62,7 @@ namespace Assets.Utils
         {
             TreeBehavior newTree = gameObject.GetComponent<TreeBehavior>();
             newTree.fruitPrefab = fruitPrefab;
-            newTree.transform.position = new Vector3(position.x, 0, position.z);
+            newTree.transform.position = new Vector3(position.x, LocationUtil.GetHeight(position), position.z);
             newTree.transform.rotation = Quaternion.Euler(Vector3.up * Random.Range(0, 360));
             newTree.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
             newTree.Start();

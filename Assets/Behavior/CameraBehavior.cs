@@ -8,7 +8,7 @@ public class CameraBehavior : MonoBehaviour
     public MapGenerator ground;
     public Material perceptionMaterial;
     public BlobBehavior target;
-    public int fruitSpawnRate = 8;
+    public int fruitSpawnRate = 4;
     public ColorDisplayType colorToggle = ColorDisplayType.None;
 
     int amount = 1;

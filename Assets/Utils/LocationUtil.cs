@@ -72,12 +72,19 @@ namespace BlobSimulation.Utils
         public static float GetHeight(float x, float y)
         {
             if (mapGen == null) mapGen = UnityEngine.Object.FindObjectOfType<MapGenerator>();
-
+            if (mapGen == null || mapGen.heightMap == null) return 0;
+ 
             var width = mapGen.heightMap.GetLength(0);
             var depth = mapGen.heightMap.GetLength(1);
 
-            x /= mapGen.scale;
-            y /= mapGen.scale;
+            var centerX = (width - 1) / 2;
+            var centerY = (depth - 1) / 2;
+
+            x /= mapGen.transform.localScale.x;
+            y /= mapGen.transform.localScale.y;
+
+            x += centerX;
+            y += centerY;
 
             if (x >= width || x < 0 || y >= depth || y < 0) return 0;
 
@@ -86,32 +93,35 @@ namespace BlobSimulation.Utils
             var upy = (int)Math.Ceiling(y);
             var downy = (int)y;
 
+            var point = new Vector2(x, y);
+            var topLeft = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[leftx, upy]);
+            var bottomRight = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[rightx, downy]);
+
             if (x % 1f + y % 1f < 1)
             {
-                var topLeft = mapGen.heightMap[leftx, upy];
-                var bottomLeft = mapGen.heightMap[leftx, downy];
-                var bottomRight = mapGen.heightMap[rightx, downy];
-
-                var point = new Vector2(x, y);
-                var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft 
+                var bottomLeft = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[leftx, downy]);
+                
+                var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft
                     + (1 - (new Vector2(leftx, downy) - point).magnitude) * bottomLeft
                     + (1 - (new Vector2(rightx, downy) - point).magnitude) * bottomRight;
 
-                return height * mapGen.scale;
+                return AdjustByMultiplier(height);
             }
 
-            {
-                var topLeft = mapGen.heightMap[leftx, upy];
-                var topRight = mapGen.heightMap[rightx, upy];
-                var bottomRight = mapGen.heightMap[rightx, downy];
+            else {
+                var topRight = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[rightx, upy]);
 
-                var point = new Vector2(x, y);
                 var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft
                     + (1 - (new Vector2(rightx, upy) - point).magnitude) * topRight
                     + (1 - (new Vector2(rightx, downy) - point).magnitude) * bottomRight;
 
-                return height * mapGen.scale;
+                return AdjustByMultiplier(height);
             }
+        }
+
+        private static float AdjustByMultiplier(float height)
+        {
+            return height * mapGen.heighMultiplier / 3;
         }
     }
 }

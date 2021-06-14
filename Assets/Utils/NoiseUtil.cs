@@ -4,7 +4,7 @@ namespace Assets.Utils
 {
     public static class NoiseUtil
     {
-        public static float[,] MakeNoise(int mapWidth, int mapDepth, int seed, float scale, int octaves, float persistence, float lacunarity, Vector2 offset)
+        public static float[,] MakeNoise(int mapWidth, int mapDepth, int seed, float scale, float frequency, int octaves, float persistence, float lacunarity, Vector3 offset)
         {
             var map = new float[mapWidth, mapDepth];
 
@@ -32,7 +32,6 @@ namespace Assets.Utils
                 for (int x = 0; x < mapWidth; x++)
                 {
                     float amplitude = 1;
-                    float frequency = 1;
                     float noiseHeight = 0;
 
                     for (int i = 0; i < octaves; i++)
@@ -60,7 +59,7 @@ namespace Assets.Utils
             {
                 for (int x = 0; x < mapWidth; x++)
                 {
-                    map[x, y] = Mathf.InverseLerp(minNoiseHeight, maxNoiseHeight, map[x, y]);
+                    map[x, y] = Mathf.InverseLerp(minNoiseHeight, maxNoiseHeight, map[x, y]) + offset.z;
                 }
             }
 

@@ -23,6 +23,7 @@ public class TreeBehavior : MonoBehaviour
     {
         closestTree = FindClosestTree();
         isOnMap = LocationUtil.IsOnMap(transform.position);
+        transform.position = new Vector3(transform.position.x, LocationUtil.GetHeight(transform.position), transform.position.z);
     }
 
     // Update is called once per frame

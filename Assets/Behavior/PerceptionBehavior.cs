@@ -34,7 +34,6 @@ public class PerceptionBehavior : MonoBehaviour
 
     void OnMouseDown()
     {
-        print("Clicked!");
         Camera.main.GetComponent<CameraBehavior>().target = GetComponentInParent<BlobBehavior>();
     }
 }

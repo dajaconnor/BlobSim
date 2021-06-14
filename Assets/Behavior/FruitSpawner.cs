@@ -76,7 +76,7 @@ public class FruitSpawner : MonoBehaviour
 
     public static FruitBehavior MakeFruit(Vector3 spawnPosition, GameObject fruitPrefab)
     {
-        if (!LocationUtil.IsOnMap(spawnPosition)) return null;
+        //if (!LocationUtil.IsOnMap(spawnPosition)) return null;
 
         spawnPosition = new Vector3(spawnPosition.x, LocationUtil.GetHeight(spawnPosition) + LocationUtil.groundHeight, spawnPosition.z);
         Vector3 randomSpawnRotation = Vector3.up * Random.Range(0, 360);

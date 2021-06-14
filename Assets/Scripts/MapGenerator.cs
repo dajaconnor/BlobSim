@@ -17,7 +17,9 @@ public class MapGenerator : MonoBehaviour
     public float lacunarity;
 
     public int seed;
-    public Vector2 offset;
+    public Vector3 offset;
+    [Range(0.000001f, 10)]
+    public float frequency;
 
     public float heighMultiplier;
     public AnimationCurve meshHeightCurve;
@@ -29,7 +31,7 @@ public class MapGenerator : MonoBehaviour
 
     public MapData GenerateMap()
     {
-        heightMap = NoiseUtil.MakeNoise(mapChunkVertices, mapChunkVertices, seed, scale, octaves, persistence, lacunarity, offset);
+        heightMap = NoiseUtil.MakeNoise(mapChunkVertices, mapChunkVertices, seed, scale, frequency, octaves, persistence, lacunarity, offset);
 
         var colorMap = DrawMapInEditor();
 

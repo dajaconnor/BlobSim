@@ -62,6 +62,8 @@ public class MapGenerator : MonoBehaviour
             var terrainData = MeshGenerator.GenerateTerrainData(heightMap, heightMultiplier, meshHeightCurve, mapScale);
             terrain.terrainData = terrainData;
             terrain.transform.position = new Vector3( -heightMap.GetLength(0) * mapScale / 2, 0, -heightMap.GetLength(0) * mapScale / 2);
+
+            //terrain.materialTemplate = new Material
         }
 
         return colorMap;

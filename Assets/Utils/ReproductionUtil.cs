@@ -28,7 +28,9 @@ namespace Assets.Utils
             newBlob.rotationSpeed /= newBlob.size * newBlob.size;
             newBlob.ground = mother.ground;
             newBlob.blobPrefab = mother.blobPrefab;
-            
+            newBlob.places = mother.places;
+            newBlob.latestPlace = mother.latestPlace;
+
             newBlob.energy = mother.incubatedEnergy;
 
             newBlob.gender = RandomGender(mother);

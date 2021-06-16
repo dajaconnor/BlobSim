@@ -47,7 +47,7 @@ public class TreeBehavior : MonoBehaviour
             {
                 Grow();
             }
-            else if (age % 500 == 0)
+            else if (age % 50 == 0)
             {
                 DropFruit();
             }

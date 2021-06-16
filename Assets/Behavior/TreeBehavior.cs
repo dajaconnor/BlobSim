@@ -1,11 +1,11 @@
 ﻿using Assets;
 using BlobSimulation.Utils;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 
 public class TreeBehavior : MonoBehaviour
 {
+    public MapGenerator ground;
     public GameObject fruitPrefab;
     private float growthRate = 0.001f;
     internal float growDropRatio = 0.5f;
@@ -21,9 +21,11 @@ public class TreeBehavior : MonoBehaviour
     // Start is called before the first frame update
     internal void Start()
     {
+        ground = FindObjectOfType<MapGenerator>();
+
         closestTree = FindClosestTree();
         isOnMap = LocationUtil.IsOnMap(transform.position);
-        transform.position = new Vector3(transform.position.x, LocationUtil.GetHeight(transform.position), transform.position.z);
+        transform.position = new Vector3(transform.position.x, LocationUtil.GetHeight(transform.position, ground), transform.position.z);
     }
 
     // Update is called once per frame
@@ -41,7 +43,7 @@ public class TreeBehavior : MonoBehaviour
 
         else if (age % 10 == 0)
         {
-            if (UnityEngine.Random.Range(0f, 1f) > growDropRatio)
+            if (Random.Range(0f, 1f) > growDropRatio)
             {
                 Grow();
             }
@@ -92,7 +94,7 @@ public class TreeBehavior : MonoBehaviour
 
     private void Grow()
     {
-        transform.localScale += new Vector3(growthRate, growthRate, growthRate);
+        transform.localScale += new Vector3(growthRate, growthRate, growthRate) * Object.FindObjectOfType<MapGenerator>().scale;
 
         if (IsOverlappingClosestTree())
         {
@@ -136,9 +138,9 @@ public class TreeBehavior : MonoBehaviour
     {
         if (!isOnMap) return;
 
-        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpotAroundPosition(transform.localScale.x * 3, transform.position);
+        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpotAroundPosition(transform.localScale.x * 3, transform.position, ground);
 
-        var fruit = FruitSpawner.MakeFruit(randomSpawnPosition, fruitPrefab);
+        var fruit = FruitSpawner.MakeFruit(randomSpawnPosition, fruitPrefab, ground);
         if (fruit == null) return;
 
         // pass those genes along!

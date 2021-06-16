@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MapGenerator : MonoBehaviour
 {
-    public enum DrawMode { NoiseMap, ColorMap, Mesh };
+    public enum DrawMode { NoiseMap, ColorMap, Mesh, Terrain };
     public DrawMode drawMode;
 
     public const int mapChunkVertices = 241;
@@ -18,20 +18,22 @@ public class MapGenerator : MonoBehaviour
 
     public int seed;
     public Vector3 offset;
-    [Range(0.000001f, 10)]
-    public float frequency;
 
-    public float heighMultiplier;
+    public float heightMultiplier;
     public AnimationCurve meshHeightCurve;
 
     public bool autoUpdate;
 
     public TerrainType[] regions;
     public float[,] heightMap;
+    public Terrain terrain;
+    public MeshData mesh;
+
+    public int mapScale;
 
     public MapData GenerateMap()
     {
-        heightMap = NoiseUtil.MakeNoise(mapChunkVertices, mapChunkVertices, seed, scale, frequency, octaves, persistence, lacunarity, offset);
+        heightMap = NoiseUtil.MakeNoise(mapChunkVertices, mapChunkVertices, seed, scale, octaves, persistence, lacunarity, offset);
 
         var colorMap = DrawMapInEditor();
 
@@ -52,7 +54,14 @@ public class MapGenerator : MonoBehaviour
         else if (drawMode == DrawMode.Mesh)
         {
             colorMap = GenerateColorMap(heightMap);
-            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(heightMap, heighMultiplier, meshHeightCurve, levelOfDetail), TextureGenerator.TextureFromColorMap(colorMap, mapChunkVertices, mapChunkVertices));
+            mesh = MeshGenerator.GenerateMesh(heightMap, heightMultiplier, meshHeightCurve, levelOfDetail);
+            display.DrawMesh(mesh, TextureGenerator.TextureFromColorMap(colorMap, mapChunkVertices, mapChunkVertices));
+        }
+        else if (drawMode == DrawMode.Terrain)
+        {
+            var terrainData = MeshGenerator.GenerateTerrainData(heightMap, heightMultiplier, meshHeightCurve, mapScale);
+            terrain.terrainData = terrainData;
+            terrain.transform.position = new Vector3( -heightMap.GetLength(0) * mapScale / 2, 0, -heightMap.GetLength(0) * mapScale / 2);
         }
 
         return colorMap;

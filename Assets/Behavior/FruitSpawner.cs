@@ -10,15 +10,15 @@ public class FruitSpawner : MonoBehaviour
     private int initialSpawn = 1000;
     private int ticks = 1;
     private TreeBehavior firstTree;
+    private MapGenerator ground;
 
     // Use this for initialization
     void Start()
     {
-        var map = FindObjectOfType<MapGenerator>();
-        map.GenerateMap();
+        ground = FindObjectOfType<MapGenerator>();
 
-        firstTree = Object.FindObjectsOfType<TreeBehavior>().First();
-        firstTree.transform.position = new Vector3(firstTree.transform.position.x, LocationUtil.GetHeight(firstTree.transform.position), firstTree.transform.position.z);
+        firstTree = FindObjectsOfType<TreeBehavior>().First();
+        firstTree.transform.position = new Vector3(firstTree.transform.position.x, LocationUtil.GetHeight(firstTree.transform.position, ground), firstTree.transform.position.z);
 
         for (var i = 0; i < initialSpawn; i++)
         {
@@ -69,16 +69,14 @@ public class FruitSpawner : MonoBehaviour
 
     private void SpawnRandomFruit()
     {
-        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(50);
+        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(50 * ground.scale, ground);
         
-        MakeFruit(randomSpawnPosition, fruitPrefab);
+        MakeFruit(randomSpawnPosition, fruitPrefab, ground);
     }
 
-    public static FruitBehavior MakeFruit(Vector3 spawnPosition, GameObject fruitPrefab)
+    public static FruitBehavior MakeFruit(Vector3 spawnPosition, GameObject fruitPrefab, MapGenerator map)
     {
-        //if (!LocationUtil.IsOnMap(spawnPosition)) return null;
-
-        spawnPosition = new Vector3(spawnPosition.x, LocationUtil.GetHeight(spawnPosition) + LocationUtil.groundHeight, spawnPosition.z);
+        spawnPosition = new Vector3(spawnPosition.x, LocationUtil.GetHeight(spawnPosition, map) + LocationUtil.groundHeight, spawnPosition.z);
         Vector3 randomSpawnRotation = Vector3.up * Random.Range(0, 360);
         var fruit = Instantiate(fruitPrefab, spawnPosition, Quaternion.Euler(randomSpawnRotation));
         fruit.name = "Fruit";

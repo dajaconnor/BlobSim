@@ -9,14 +9,14 @@ namespace Assets.Utils
     {
         private static float geneticDrift = 0.1f;
 
-        public static void ReproduceBlob(BlobBehavior mother, GameObject gameObject)
+        public static void ReproduceBlob(BlobBehavior mother, GameObject gameObject, MapGenerator map)
         {
             BlobBehavior newBlob = gameObject.GetComponent<BlobBehavior>();
             newBlob.generation = mother.generation + 1;
 
             newBlob.Start();
 
-            newBlob.transform.position = new Vector3(mother.transform.position.x, LocationUtil.GetHeight(mother.transform.position) + BlobBehavior.heightAdjust, mother.transform.position.z);
+            newBlob.transform.position = new Vector3(mother.transform.position.x, LocationUtil.GetHeight(mother.transform.position, map) + BlobBehavior.heightAdjust, mother.transform.position.z);
 
             newBlob.size = SetNewBlobSize(MeOrMate(mother), gameObject);
 
@@ -31,14 +31,7 @@ namespace Assets.Utils
             
             newBlob.energy = mother.incubatedEnergy;
 
-            newBlob.places = (Vector2[])mother.places.Clone();
-            newBlob.latestPlace = mother.latestPlace;
-
-
-
             newBlob.gender = RandomGender(mother);
-
-
 
             newBlob.name = newBlob.gender.ToString() + "Blob";
             newBlob.parent = mother;
@@ -58,11 +51,11 @@ namespace Assets.Utils
             stats.UpdateAverages(newBlob, StatType.Birth);
         }
 
-        public static void GerminateTree(TreeGenes genes, Vector3 position, GameObject gameObject, GameObject fruitPrefab)
+        public static void GerminateTree(TreeGenes genes, Vector3 position, GameObject gameObject, GameObject fruitPrefab, MapGenerator map)
         {
             TreeBehavior newTree = gameObject.GetComponent<TreeBehavior>();
             newTree.fruitPrefab = fruitPrefab;
-            newTree.transform.position = new Vector3(position.x, LocationUtil.GetHeight(position), position.z);
+            newTree.transform.position = new Vector3(position.x, LocationUtil.GetHeight(position, map), position.z);
             newTree.transform.rotation = Quaternion.Euler(Vector3.up * Random.Range(0, 360));
             newTree.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
             newTree.Start();
@@ -131,16 +124,15 @@ namespace Assets.Utils
         private static float SetNewBlobSize(BlobBehavior parent, GameObject gameObject)
         {
             var sizeModifier = GetDrift();
-            gameObject.transform.localScale = gameObject.transform.localScale * sizeModifier;
+            gameObject.transform.localScale *= sizeModifier;
             return parent.size * sizeModifier;
         }
 
         private static float GetDrift()
         {
             var mutationValue = Random.value;
-            if (mutationValue > 0.01f) return Random.Range(1 - geneticDrift, 1 + geneticDrift);
-            if (mutationValue > 0.001f) return Random.Range((1 - geneticDrift) / 10, (1 - geneticDrift) * 10);
-            return Random.Range((1 - geneticDrift) / 25, (1 - geneticDrift) * 25);
+            if (mutationValue > 0.001f) return Random.Range(1 - geneticDrift, 1 + geneticDrift);
+            return Random.Range((1 - geneticDrift) / 10, (1 - geneticDrift) * 10);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Assets.Enums;
+using BlobSimulation.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,7 +21,7 @@ public class CameraBehavior : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-
+        ground = FindObjectOfType<MapGenerator>();
     }
 
     // Update is called once per frame
@@ -46,7 +47,7 @@ public class CameraBehavior : MonoBehaviour
                     timespan.Minutes,
                     timespan.Seconds);
 
-                var thingsToSay = new List<string>
+                    var thingsToSay = new List<string>
                     {
                         target.energy + " energy left",
                         target.fruitEaten + " fruit found",
@@ -73,7 +74,9 @@ public class CameraBehavior : MonoBehaviour
                         target.generation + " generation",
                         target.childGenderRatio.ToString("F" + numDigitsAfterPoint) + "% female",
                         target.gender.ToString(),
-                        target.status.ToString()
+                        target.status.ToString(),
+                        "",
+                        $"Height: {LocationUtil.GetHeight(target.transform.position, ground).ToString("F" + numDigitsAfterPoint)}"
                     };
 
                 DisplayStats(thingsToSay);
@@ -155,11 +158,11 @@ public class CameraBehavior : MonoBehaviour
     private static void DisplayStats(List<string> thingsToSay)
     {
         var guiStyle = new GUIStyle();
-        guiStyle.fontSize = 26;
+        guiStyle.fontSize = 16;
 
         for (var i = 0; i < thingsToSay.Count; i++)
         {
-            GUI.Label(new Rect(10, 30 * i + 12, 200, 20), thingsToSay[i], guiStyle);
+            GUI.Label(new Rect(10, 20 * i + 12, 200, 20), thingsToSay[i], guiStyle);
         }
     }
 
@@ -270,12 +273,12 @@ public class CameraBehavior : MonoBehaviour
 
         if (Input.GetKey(KeyCode.LeftControl) && transform.position.y > 1)
         {
-            height = -1;
+            height -= (int) ground.scale;
         }
 
         if (Input.GetKey(KeyCode.LeftShift))
         {
-            height = 1;
+            height += (int) ground.scale;
         }
 
         Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), height, Input.GetAxisRaw("Vertical"));

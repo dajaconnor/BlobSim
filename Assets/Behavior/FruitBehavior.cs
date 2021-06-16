@@ -39,7 +39,7 @@ public class FruitBehavior : MonoBehaviour
         }
 
         GameObject newGameObject = Instantiate(treePrefab, transform.position, transform.rotation);
-        ReproductionUtil.GerminateTree(genes, transform.position, newGameObject, fruitPrefab);
+        ReproductionUtil.GerminateTree(genes, transform.position, newGameObject, fruitPrefab, FindObjectOfType<MapGenerator>());
 
         Destroy(this.gameObject);
         Destroy(this);

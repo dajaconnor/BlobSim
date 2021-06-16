@@ -4,7 +4,7 @@ namespace Assets.Utils
 {
     public static class NoiseUtil
     {
-        public static float[,] MakeNoise(int mapWidth, int mapDepth, int seed, float scale, float frequency, int octaves, float persistence, float lacunarity, Vector3 offset)
+        public static float[,] MakeNoise(int mapWidth, int mapDepth, int seed, float scale, int octaves, float persistence, float lacunarity, Vector3 offset)
         {
             var map = new float[mapWidth, mapDepth];
 
@@ -33,6 +33,7 @@ namespace Assets.Utils
                 {
                     float amplitude = 1;
                     float noiseHeight = 0;
+                    float frequency = 0.5f;
 
                     for (int i = 0; i < octaves; i++)
                     {

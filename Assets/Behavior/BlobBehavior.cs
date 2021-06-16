@@ -94,6 +94,7 @@ public class BlobBehavior : MonoBehaviour
     internal void Start()
     {
         stats = ground.GetComponent<Statistics>();
+        ground = FindObjectOfType<MapGenerator>();
 
         if (generation == 0)
         {
@@ -185,7 +186,7 @@ public class BlobBehavior : MonoBehaviour
             }
 
             GameObject newGameObject = Instantiate(treePrefab, transform.position, transform.rotation);
-            ReproductionUtil.GerminateTree(seedInPoop, transform.position, newGameObject, fruitPrefab);
+            ReproductionUtil.GerminateTree(seedInPoop, transform.position, newGameObject, fruitPrefab, ground);
             seedInPoop = null;
         }
     }
@@ -207,7 +208,7 @@ public class BlobBehavior : MonoBehaviour
         stats.UpdateAverages(this, StatType.Death);
         if (!die)
         {
-            FruitSpawner.MakeFruit(transform.position, fruitPrefab);
+            FruitSpawner.MakeFruit(transform.position, fruitPrefab, ground);
         }
         Destroy(this.gameObject);
         Destroy(this);
@@ -285,7 +286,7 @@ public class BlobBehavior : MonoBehaviour
 
     private void FixHeightBug()
     {
-        transform.position = new Vector3(transform.position.x, LocationUtil.GetHeight(transform.position) + heightAdjust, transform.position.z);
+        transform.position = new Vector3(transform.position.x, LocationUtil.GetHeight(transform.position, ground) + heightAdjust, transform.position.z);
     }
 
     private bool ShouldDie()
@@ -377,12 +378,12 @@ public class BlobBehavior : MonoBehaviour
 
         currentIncubation++;
         energy -= 1000 * (int)size;
-        incubatedEnergy += (int)(500 * size);
+        incubatedEnergy += (int)(1000 * size);
 
         if (currentIncubation >= incubationTicks && partner != null)
         {
             GameObject newGameObject = Instantiate(gameObject, transform.position, transform.rotation);
-            ReproductionUtil.ReproduceBlob(this, newGameObject);
+            ReproductionUtil.ReproduceBlob(this, newGameObject, ground);
         }
     }
 
@@ -444,7 +445,9 @@ public class BlobBehavior : MonoBehaviour
 
     private void MoveForward()
     {
-        var moveAmount = new Vector3(0, 0, 1).normalized * currentSpeed * Time.deltaTime;
+        var scaleAdjustedSpeed = currentSpeed * ground.scale;
+
+        var moveAmount = new Vector3(0, 0, 1).normalized * scaleAdjustedSpeed * Time.deltaTime;
 
         energy -= (int)(size * size * size * currentSpeed * currentSpeed);
 
@@ -573,17 +576,6 @@ public class BlobBehavior : MonoBehaviour
                 partner.energy += energyToProvide;
             }
         }
-
-        //else if (triggerCollider.gameObject.name.StartsWith("Tree"))
-        //{
-        //    var targetTree = triggerCollider.gameObject.GetComponentInParent<TreeBehavior>();
-
-        //    if (targetTree.transform.localScale.x < size)
-        //    {
-        //        Destroy(targetTree.gameObject);
-        //        Destroy(targetTree);
-        //    }
-        //}
     }
 
     private void RememberThisPlace()

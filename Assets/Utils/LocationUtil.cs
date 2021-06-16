@@ -7,19 +7,18 @@ namespace BlobSimulation.Utils
     public static class LocationUtil
     {
         public static float groundHeight = 0.18f;
-        private static MapGenerator mapGen = UnityEngine.Object.FindObjectOfType<MapGenerator>();
 
-        public static Vector3 GetRandomSpot(float spawnRadius)
+        public static Vector3 GetRandomSpot(float spawnRadius, MapGenerator map)
         {
             Vector2 random2DPoint = UnityEngine.Random.insideUnitCircle;
-            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius, GetHeight(random2DPoint.x, random2DPoint.y) + groundHeight, random2DPoint.y * spawnRadius);
+            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius, GetHeight(random2DPoint.x, random2DPoint.y, map) + groundHeight, random2DPoint.y * spawnRadius);
             return randomSpawnPosition;
         }
 
-        public static Vector3 GetRandomSpotAroundPosition(float spawnRadius, Vector3 position)
+        public static Vector3 GetRandomSpotAroundPosition(float spawnRadius, Vector3 position, MapGenerator map)
         {
             Vector2 random2DPoint = UnityEngine.Random.insideUnitCircle;
-            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius + position.x, GetHeight(random2DPoint.x, random2DPoint.y) + groundHeight, random2DPoint.y * spawnRadius + position.z);
+            Vector3 randomSpawnPosition = new Vector3(random2DPoint.x * spawnRadius + position.x, GetHeight(random2DPoint.x, random2DPoint.y, map) + groundHeight, random2DPoint.y * spawnRadius + position.z);
             return randomSpawnPosition;
         }
 
@@ -64,64 +63,88 @@ namespace BlobSimulation.Utils
             return (currentClosest, currentDistance);
         }
 
-        public static float GetHeight(Vector3 position)
+        public static float GetHeight(Vector3 position, MapGenerator ground)
         {
-            return GetHeight(position.x, position.z);
+            return GetHeight(position.x, position.z, ground);
         }
 
-        public static float GetHeight(float x, float y)
+        public static float GetHeight(float x, float y, MapGenerator ground)
         {
-            if (mapGen == null) mapGen = UnityEngine.Object.FindObjectOfType<MapGenerator>();
-            if (mapGen == null || mapGen.heightMap == null) return 0;
- 
-            var width = mapGen.heightMap.GetLength(0);
-            var depth = mapGen.heightMap.GetLength(1);
+            //return 0;
 
-            var centerX = (width - 1) / 2;
-            var centerY = (depth - 1) / 2;
+            if (ground == null) return 0;
+            if (MeshGenerator.MeshHeightField == null) ground.GenerateMap();
 
-            x /= mapGen.transform.localScale.x;
-            y /= mapGen.transform.localScale.y;
+            return ground.terrain.SampleHeight(new Vector3(x, 0, y));
 
-            x += centerX;
-            y += centerY;
+            //x /= ground.scale;
+            //y /= ground.scale;
 
-            if (x >= width || x < 0 || y >= depth || y < 0) return 0;
+            //var width = MeshGenerator.MeshHeightField.GetLength(0);
+            //var depth = MeshGenerator.MeshHeightField.GetLength(1);
 
-            var leftx =(int)Math.Ceiling(x);
-            var rightx = (int) x;
-            var upy = (int)Math.Ceiling(y);
-            var downy = (int)y;
+            //var centerX = (width - 1) / 2;
+            //var centerY = (depth - 1) / 2;
 
-            var point = new Vector2(x, y);
-            var topLeft = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[leftx, upy]);
-            var bottomRight = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[rightx, downy]);
+            //x /= ground.transform.localScale.x;
+            //y /= ground.transform.localScale.y;
 
-            if (x % 1f + y % 1f < 1)
-            {
-                var bottomLeft = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[leftx, downy]);
-                
-                var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft
-                    + (1 - (new Vector2(leftx, downy) - point).magnitude) * bottomLeft
-                    + (1 - (new Vector2(rightx, downy) - point).magnitude) * bottomRight;
+            //x += centerX;
+            //y += centerY;
 
-                return AdjustByMultiplier(height);
-            }
+            //if (x >= width || x < 0 || y >= depth || y < 0) return 0;
 
-            else {
-                var topRight = mapGen.meshHeightCurve.Evaluate(mapGen.heightMap[rightx, upy]);
+            //var leftx = (int)Math.Ceiling(x);
+            //var rightx = (int)x;
+            //var upy = (int)Math.Ceiling(y);
+            //var downy = (int)y;
 
-                var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft
-                    + (1 - (new Vector2(rightx, upy) - point).magnitude) * topRight
-                    + (1 - (new Vector2(rightx, downy) - point).magnitude) * bottomRight;
+            //var point = new Vector2(x, y);
 
-                return AdjustByMultiplier(height);
-            }
+            //leftx = SetInRange(leftx, MeshGenerator.MeshHeightField.GetLength(0));
+            //upy = SetInRange(upy, MeshGenerator.MeshHeightField.GetLength(1));
+            //rightx = SetInRange(rightx, MeshGenerator.MeshHeightField.GetLength(0));
+            //downy = SetInRange(downy, MeshGenerator.MeshHeightField.GetLength(1));
+
+            //var topLeft = ground.meshHeightCurve.Evaluate(MeshGenerator.MeshHeightField[leftx, upy]);
+            //var bottomRight = ground.meshHeightCurve.Evaluate(MeshGenerator.MeshHeightField[rightx, downy]);
+            //var locationHeight = 0f;
+
+            //if (x % 1f + y % 1f < 1)
+            //{
+            //    var bottomLeft = ground.meshHeightCurve.Evaluate(MeshGenerator.MeshHeightField[leftx, downy]);
+
+            //    var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft
+            //        + (1 - (new Vector2(leftx, downy) - point).magnitude) * bottomLeft
+            //        + (1 - (new Vector2(rightx, downy) - point).magnitude) * bottomRight;
+
+            //    locationHeight = AdjustByMultiplier(height, ground);
+            //}
+
+            //else
+            //{
+            //    var topRight = ground.meshHeightCurve.Evaluate(MeshGenerator.MeshHeightField[rightx, upy]);
+
+            //    var height = (1 - (new Vector2(leftx, upy) - point).magnitude) * topLeft
+            //        + (1 - (new Vector2(rightx, upy) - point).magnitude) * topRight
+            //        + (1 - (new Vector2(rightx, downy) - point).magnitude) * bottomRight;
+
+            //    locationHeight = AdjustByMultiplier(height, ground);
+            //}
+
+            //return locationHeight;
         }
 
-        private static float AdjustByMultiplier(float height)
+        private static int SetInRange(int leftx, int upperLimit)
         {
-            return height * mapGen.heighMultiplier / 3;
+            if (leftx < 0) leftx = 0;
+            if (leftx >= upperLimit) leftx = upperLimit - 1;
+            return leftx;
+        }
+
+        private static float AdjustByMultiplier(float height, MapGenerator ground)
+        {
+            return height * ground.heightMultiplier * ground.heightMultiplier;
         }
     }
 }

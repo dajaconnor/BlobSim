@@ -54,7 +54,7 @@ public class BlobBehavior : MonoBehaviour
 
 
     int energyPerFruit = 40000;
-    int energyPerTreeFruit = 1000;
+    int energyPerTreeFruit = 10000;
 
 
     GameObject food;

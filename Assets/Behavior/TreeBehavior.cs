@@ -8,7 +8,7 @@ public class TreeBehavior : MonoBehaviour
     public MapGenerator ground;
     public GameObject fruitPrefab;
     private float growthRate = 0.001f;
-    internal float growDropRatio = 0.5f;
+    internal float growDropRatio = 0.1f;
     internal int lifespan = 100000;
     internal int age = 50000;
     internal TreeBehavior closestTree;

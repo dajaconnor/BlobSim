@@ -29,29 +29,33 @@ public class FruitSpawner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (ticks < 1000) firstTree.DropFruit();
-
-        if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
+        if (ticks < 1000)
         {
-            SpawnRandomFruit();
+            firstTree.DropFruit();
+            ticks++;
         }
 
-        if (ticks % 2000 == 0)
-        {
-            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
-        }
+        //if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
+        //{
+        //    SpawnRandomFruit();
+        //}
 
-        ticks++;
+        //if (ticks % 2000 == 0)
+        //{
+        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
+        //}
 
-        if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
-        {
-            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate--;
-        }
+        //ticks++;
 
-        if (Input.GetKeyDown(KeyCode.Equals))
-        {
-            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate++;
-        }
+        //if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
+        //{
+        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate--;
+        //}
+
+        //if (Input.GetKeyDown(KeyCode.Equals))
+        //{
+        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate++;
+        //}
     }
 
     private void OnGUI()

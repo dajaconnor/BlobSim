@@ -28,7 +28,7 @@ namespace Assets.Utils
             newBlob.rotationSpeed /= newBlob.size * newBlob.size;
             newBlob.ground = mother.ground;
             newBlob.blobPrefab = mother.blobPrefab;
-            newBlob.places = mother.places;
+            newBlob.places = (Vector2[]) mother.places.Clone();
             newBlob.latestPlace = mother.latestPlace;
 
             newBlob.energy = mother.incubatedEnergy;
@@ -67,6 +67,7 @@ namespace Assets.Utils
             newTree.fastGrowTime = (int)(genes.fastGrowTime * GetDrift());
             newTree.mediumGrowTime = (int)(genes.mediumGrowTime * GetDrift());
             newTree.slowGrowTime = (int)(genes.slowGrowTime * GetDrift());
+            newTree.fiberInFruit = genes.fiber * GetDrift();
             newTree.age = 0;
             
         }
@@ -88,7 +89,7 @@ namespace Assets.Utils
             newBlob.reserveEnergy = (int)(MeOrMate(mother).reserveEnergy * GetDrift());
             newBlob.jogRotationModifier = MeOrMate(mother).jogRotationModifier * GetDrift();
             newBlob.runRotationModifier = MeOrMate(mother).runRotationModifier * GetDrift();
-            //newBlob.lifespan = (int)(MeOrMate(mother).lifespan * GetDrift());
+            newBlob.carnivorous = MeOrMate(mother).carnivorous * GetDrift();
 
             if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
             else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());

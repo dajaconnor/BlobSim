@@ -16,6 +16,7 @@ public class TreeBehavior : MonoBehaviour
     internal int fastGrowTime = 250;
     internal int mediumGrowTime = 250;
     internal int slowGrowTime = 500;
+    internal float fiberInFruit = 0.01f;
     private bool isOnMap = true;
 
     // Start is called before the first frame update
@@ -35,10 +36,18 @@ public class TreeBehavior : MonoBehaviour
         else if (age < fastGrowTime + mediumGrowTime)
         {
             if (age % 2 == 0) Grow();
+            else if (age % 50 == 0)
+            {
+                DropFruit();
+            }
         }
         else if (age < fastGrowTime + mediumGrowTime + slowGrowTime)
         {
             if (age % 5 == 0) Grow();
+            else if (age % 50 == 0)
+            {
+                DropFruit();
+            }
         }
 
         else if (age % 10 == 0)
@@ -47,7 +56,7 @@ public class TreeBehavior : MonoBehaviour
             {
                 Grow();
             }
-            else if (age % 50 == 0)
+            else
             {
                 DropFruit();
             }
@@ -146,6 +155,6 @@ public class TreeBehavior : MonoBehaviour
         // pass those genes along!
         // genetic drift will happen on germination, not here
         fruit.gestation = lifespan / 100;
-        fruit.genes = new TreeGenes(growDropRatio, lifespan, fastGrowTime, mediumGrowTime, slowGrowTime);
+        fruit.genes = new TreeGenes(growDropRatio, lifespan, fastGrowTime, mediumGrowTime, slowGrowTime, fiberInFruit);
     }
 }

@@ -238,8 +238,12 @@ public class CameraBehavior : MonoBehaviour
 
     private void FollowTarget()
     {
-        distanceToTarget -= Input.GetAxisRaw("Vertical") * 0.1f;
-        if (distanceToTarget < 0.5) distanceToTarget = 0.5f;
+        if (Input.GetAxisRaw("Vertical") != 0)
+        {
+            distanceToTarget -= Input.GetAxisRaw("Vertical");
+        }
+
+        if (distanceToTarget < 0) distanceToTarget = 0;
 
         transform.LookAt(target.transform.position);
         var currentDistanceToTarget = Vector3.Distance(target.transform.position, transform.position);
@@ -248,7 +252,7 @@ public class CameraBehavior : MonoBehaviour
         {
             var speed = 1.01f;
 
-            if (currentDistanceToTarget > distanceToTarget * 1.3) speed = 8;
+            if (currentDistanceToTarget > distanceToTarget * 1.3) speed = 20;
             var moveAmount = new Vector3(0, 0, 1).normalized * target.currentSpeed * Time.deltaTime * speed;
 
             transform.Translate(moveAmount, Space.Self);
@@ -283,7 +287,7 @@ public class CameraBehavior : MonoBehaviour
 
         Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), height, Input.GetAxisRaw("Vertical"));
         Vector3 direction = input.normalized;
-        Vector3 velocity = (direction * amount) / 2;
+        Vector3 velocity = direction * amount;
 
         transform.Translate(velocity, Space.Self);
 

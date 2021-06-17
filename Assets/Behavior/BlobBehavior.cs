@@ -35,16 +35,15 @@ public class BlobBehavior : MonoBehaviour
     internal float aggression = 10f;
     internal int sexualMaturity = 1000;
     internal int reserveEnergy = 100000;
+    internal float carnivorous = 0.5f;
     internal TreeGenes seedInPoop;
-    internal float poopChance = 0.01f;
-    //internal int lifespan = 45000;
 
 
     internal BlobStatusType status = BlobStatusType.Wandering;
     public GenderType gender = GenderType.Male;
 
     // Dependent on size
-    internal float rotationSpeed = 5;
+    internal float rotationSpeed = 10;
     internal float currentRotationSpeed = 5;
 
     internal int incubatedEnergy = 0;
@@ -108,6 +107,8 @@ public class BlobBehavior : MonoBehaviour
             energy = 300000000;
             gender = GenderType.Female;
             childGenderRatio = 0.5f;
+            rotationSpeed = 10;
+            carnivorous = 0.5f;
         }
 
         if (generation < 2) partner = this;
@@ -178,7 +179,7 @@ public class BlobBehavior : MonoBehaviour
     {
         if (seedInPoop == null) return;
 
-        if (Random.value < poopChance)
+        if (Random.value < seedInPoop.fiber)
         {
             if (LocationUtil.IsInShade(transform.position))
             {
@@ -195,9 +196,9 @@ public class BlobBehavior : MonoBehaviour
     {
         var distanceToTarget = Vector3.Distance(targetPosition, transform.position);
 
-        if (distanceToTarget < 3)
+        if (distanceToTarget < 3 * ground.scale)
         {
-            currentSpeed *= distanceToTarget / 3;
+            currentSpeed *= distanceToTarget / (3 * ground.scale);
         }
 
         return distanceToTarget;
@@ -464,16 +465,19 @@ public class BlobBehavior : MonoBehaviour
         if (triggerCollider.gameObject.name.StartsWith("Fruit"))
         {
             var fruit = triggerCollider.gameObject.GetComponent<FruitBehavior>();
-            seedInPoop = fruit.genes;
-
+            
             if (fruit.genes == null)
             {
                 energy += energyPerFruit;
                 energyFromFruit += energyPerFruit;
             } else
             {
-                energy += energyPerTreeFruit;
-                energyFromFruit += energyPerTreeFruit;
+                seedInPoop = fruit.genes;
+
+                var energyGain = (int) (energyPerTreeFruit * (1 - carnivorous) * 2);
+
+                energy += energyGain;
+                energyFromFruit += energyGain;
             }
 
             Destroy(fruit.gameObject);
@@ -494,7 +498,7 @@ public class BlobBehavior : MonoBehaviour
 
             if (targetBlob == null || targetBlob.size < size / predationLimit)
             {
-                var deltaEnergy = (int)(energyPerFruit * targetBlob.size);
+                var deltaEnergy = (int)(energyPerFruit * targetBlob.size * carnivorous * 2);
 
                 food = null;
                 energy += deltaEnergy;

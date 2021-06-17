@@ -30,41 +30,28 @@ public class FruitSpawner : MonoBehaviour
     void Update()
     {
         if (ticks < 1000) firstTree.DropFruit();
-        else if(ticks < 10000 && ticks % 10 == 0) firstTree.DropFruit();
-        else if (ticks < 100000 && ticks % 100 == 0) firstTree.DropFruit();
 
-        if (ticks < 100000)
+        if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
         {
-            ticks++;
-
-            if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
-            {
-                SpawnRandomFruit();
-            }
+            SpawnRandomFruit();
         }
 
+        if (ticks % 2000 == 0)
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
+        }
 
-        //if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
-        //{
-        //    SpawnRandomFruit();
-        //}
+        ticks++;
 
-        //if (ticks % 2000 == 0)
-        //{
-        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
-        //}
+        if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate--;
+        }
 
-        //ticks++;
-
-        //if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
-        //{
-        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate--;
-        //}
-
-        //if (Input.GetKeyDown(KeyCode.Equals))
-        //{
-        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate++;
-        //}
+        if (Input.GetKeyDown(KeyCode.Equals))
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate++;
+        }
     }
 
     private void OnGUI()
@@ -82,7 +69,7 @@ public class FruitSpawner : MonoBehaviour
 
     private void SpawnRandomFruit()
     {
-        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(ground.terrain.transform.position.x / 3, ground);
+        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(ground.terrain.transform.position.x / 10, ground);
         
         MakeFruit(randomSpawnPosition, fruitPrefab, ground);
     }

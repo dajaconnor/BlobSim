@@ -129,7 +129,7 @@ public class TreeBehavior : MonoBehaviour
         if (closestTree == null) return false;
 
         var distance = DistanceTo(this, closestTree);
-        var shadeRadius = transform.localScale.x * 4;
+        var shadeRadius = transform.localScale.x * 10 * ground.scale;
 
         return closestTree != null && distance < shadeRadius;
     }

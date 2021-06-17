@@ -35,27 +35,27 @@ public class FruitSpawner : MonoBehaviour
             ticks++;
         }
 
-        //if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
-        //{
-        //    SpawnRandomFruit();
-        //}
+        if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
+        {
+            SpawnRandomFruit();
+        }
 
-        //if (ticks % 2000 == 0)
-        //{
-        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
-        //}
+        if (ticks % 1000 == 0)
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate += 1;
+        }
 
-        //ticks++;
+        ticks++;
 
-        //if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
-        //{
-        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate--;
-        //}
+        if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate--;
+        }
 
-        //if (Input.GetKeyDown(KeyCode.Equals))
-        //{
-        //    Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate++;
-        //}
+        if (Input.GetKeyDown(KeyCode.Equals))
+        {
+            Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate++;
+        }
     }
 
     private void OnGUI()
@@ -73,7 +73,7 @@ public class FruitSpawner : MonoBehaviour
 
     private void SpawnRandomFruit()
     {
-        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(ground.terrain.transform.position.x / 10, ground);
+        Vector3 randomSpawnPosition = LocationUtil.GetRandomSpot(ground.terrain.transform.position.x / 40, ground);
         
         MakeFruit(randomSpawnPosition, fruitPrefab, ground);
     }

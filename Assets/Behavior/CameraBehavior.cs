@@ -12,7 +12,7 @@ public class CameraBehavior : MonoBehaviour
     public int fruitSpawnRate = 4;
     public ColorDisplayType colorToggle = ColorDisplayType.None;
 
-    int amount = 1;
+    float amount;
     float distanceToTarget = 10;
     public bool showStats = false;
     public DisplayType displayType = DisplayType.None;
@@ -168,7 +168,7 @@ public class CameraBehavior : MonoBehaviour
 
     private void UserControl()
     {
-        amount = 1;
+        amount = 0.5f;
 
         if (target == null)
         {
@@ -291,7 +291,9 @@ public class CameraBehavior : MonoBehaviour
 
         transform.Translate(velocity, Space.Self);
 
-        if (transform.position.y < 1) transform.position = new Vector3(transform.position.x, 1, transform.position.z);
+        var groundHeight = LocationUtil.GetHeight(transform.position, ground) + 3;
+
+        if (transform.position.y < groundHeight) transform.position = new Vector3(transform.position.x, groundHeight, transform.position.z);
     }
 
     private void HandleRotation()

@@ -8,6 +8,8 @@ using Random = UnityEngine.Random;
 
 public class BlobBehavior : MonoBehaviour
 {
+    private static readonly bool REALLY_PICKY_MATE_SELECTION = true;
+
     public MapGenerator ground;
     public PerceptionBehavior perception;
     public GameObject blobPrefab;
@@ -265,6 +267,7 @@ public class BlobBehavior : MonoBehaviour
             && energy > reserveEnergy * 2 
             && partner != null 
             && partner.partner != null
+            && partner != this
             && partner.partner.Equals(this) && 
             !partner.ShouldReproduce();
     }
@@ -353,19 +356,43 @@ public class BlobBehavior : MonoBehaviour
         return (gender == GenderType.Male && newBlob.gender == GenderType.Male && partner == null & newBlob.partner != null && rival == null && newBlob.rival == null && IsGoodPartner(newBlob.partner, true));
     }
 
-    private bool IsGoodPartner(BlobBehavior blob, bool checkingRivalry)
+    private bool IsGoodPartner(BlobBehavior potentialPartner, bool checkingRivalry)
     {
+        // no sense checking stuff if they're alraedy your partner
+        // ... and don't pick yourself.  that's ridiculous.
+        if (potentialPartner == partner || potentialPartner == this) return false;
+
         // girls pick boys unless it's a rivalry
-        if ((gender == GenderType.Male || blob.gender == GenderType.Female) && !checkingRivalry) return false;
+        if ((gender == GenderType.Male || potentialPartner.gender == GenderType.Female) && !checkingRivalry) return false;
 
         // check size
-        if (blob.size / size > mateLimit || size / blob.size > mateLimit) return false;
+        if (potentialPartner.size / size > mateLimit || size / potentialPartner.size > mateLimit) return false;
+
+        // both parters should be sexually mature
+        if (potentialPartner.ticksLived < potentialPartner.sexualMaturity || ticksLived < sexualMaturity) return false;
+
+        if (REALLY_PICKY_MATE_SELECTION && !IsPickyMateMatch(potentialPartner)) {
+            return false;
+        }
+
+        // they're a good match, so assuming we don't already have a partner
+        // or this is gen 0 and your partner is yourself (you wierdo...)
         if (partner == null || partner == this) return true;
 
-        if (partner.ticksLived == 0) return true;
-        if (blob.ticksLived < sexualMaturity) return false;
+        return partner.energy / partner.ticksLived < potentialPartner.energy / potentialPartner.ticksLived;
+    }
 
-        return partner.energy / partner.ticksLived < blob.energy / blob.ticksLived;
+    private bool IsPickyMateMatch(BlobBehavior potentialPartner)
+    {
+        if (potentialPartner.speed / speed > mateLimit || speed / potentialPartner.speed > mateLimit) return false;
+        if (potentialPartner.jogModifier / jogModifier > mateLimit || jogModifier / potentialPartner.jogModifier > mateLimit) return false;
+        if (potentialPartner.runModifier / runModifier > mateLimit || runModifier / potentialPartner.runModifier > mateLimit) return false;
+        if (potentialPartner.sexualMaturity / sexualMaturity > mateLimit || sexualMaturity / potentialPartner.sexualMaturity > mateLimit) return false;
+        if (potentialPartner.wantForPrey / wantForPrey > mateLimit || wantForPrey / potentialPartner.wantForPrey > mateLimit) return false;
+        if (potentialPartner.aggression / aggression > mateLimit || aggression / potentialPartner.aggression > mateLimit) return false;
+        if (potentialPartner.carnivorous / carnivorous > mateLimit || carnivorous / potentialPartner.carnivorous > mateLimit) return false;
+        if (potentialPartner.fearOfPredator / fearOfPredator > mateLimit || fearOfPredator / potentialPartner.fearOfPredator > mateLimit) return false;
+        return true;
     }
 
     private void MakeNewBlob()

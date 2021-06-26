@@ -1,5 +1,6 @@
 ﻿using Assets.Enums;
 using BlobSimulation.Utils;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -49,6 +50,7 @@ namespace Assets.Utils
 
             var stats = mother.ground.GetComponent<Statistics>();
             stats.BothGenderRecords(mother.partner);
+            stats.BothGenderRecords(mother);
             stats.UpdateSurvivalStatistics(mother);
             stats.UpdateAverages(newBlob, StatType.Birth);
         }
@@ -69,7 +71,36 @@ namespace Assets.Utils
             newTree.slowGrowTime = (int)(genes.slowGrowTime * GetDrift());
             newTree.fiberInFruit = genes.fiber * GetDrift();
             newTree.age = 0;
-            
+        }
+
+        public static float SampleSpeciation(int sampleSize)
+        {
+            var allBlobs = Object.FindObjectsOfType<BlobBehavior>();
+            var sampleBlobs = allBlobs;
+
+            if (sampleSize < allBlobs.Length)
+            {
+                var random = new System.Random();
+
+                sampleBlobs = allBlobs.OrderBy(x => random.Next()).Take(sampleSize).ToArray();
+            }
+            else
+            {
+                sampleSize = allBlobs.Length;
+            }
+
+
+            var viableBlobs = 0;
+
+            foreach(var blob in allBlobs)
+            {
+                foreach(var sampleBlob in sampleBlobs)
+                {
+                    if (blob != sampleBlob && blob.IsSameSpecies(sampleBlob)) viableBlobs++;
+                }
+            }
+
+            return (float) viableBlobs / (allBlobs.Length * sampleSize);
         }
 
         private static void RandomizeTraits(BlobBehavior mother, BlobBehavior newBlob)
@@ -90,6 +121,8 @@ namespace Assets.Utils
             newBlob.jogRotationModifier = MeOrMate(mother).jogRotationModifier * GetDrift();
             newBlob.runRotationModifier = MeOrMate(mother).runRotationModifier * GetDrift();
             newBlob.carnivorous = MeOrMate(mother).carnivorous * GetDrift();
+            newBlob.melee = MeOrMate(mother).melee * GetDrift();
+            newBlob.armor = MeOrMate(mother).armor * GetDrift();
 
             if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
             else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());

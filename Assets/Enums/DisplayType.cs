@@ -2,6 +2,6 @@
 {
     public enum DisplayType
     {
-        None, Statistics, Records
+        None, PhysicalRecords, BehavioralRecords, ReproductiveRecords
     }
 }

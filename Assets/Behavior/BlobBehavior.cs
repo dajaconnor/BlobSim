@@ -8,8 +8,6 @@ using Random = UnityEngine.Random;
 
 public class BlobBehavior : MonoBehaviour
 {
-    private static readonly bool REALLY_PICKY_MATE_SELECTION = true;
-
     public MapGenerator ground;
     public PerceptionBehavior perception;
     public GameObject blobPrefab;
@@ -38,7 +36,10 @@ public class BlobBehavior : MonoBehaviour
     internal int sexualMaturity = 1000;
     internal int reserveEnergy = 100000;
     internal float carnivorous = 0.5f;
+    internal float melee = 1f; // includes more options for predators, costs energy per movement
+    internal float armor = 1f; // reduces predators for potential prey, costs energy per movement
     internal TreeGenes seedInPoop;
+    private int rejectedMates = 0;
 
 
     internal BlobStatusType status = BlobStatusType.Wandering;
@@ -111,6 +112,10 @@ public class BlobBehavior : MonoBehaviour
             childGenderRatio = 0.5f;
             rotationSpeed = 10;
             carnivorous = 0.5f;
+
+            var stats = ground.GetComponent<Statistics>();
+
+            stats.UpdateAverages(this, StatType.Birth);
         }
 
         if (generation < 2) partner = this;
@@ -295,7 +300,7 @@ public class BlobBehavior : MonoBehaviour
 
     private bool ShouldDie()
     {
-        return energy < 0 || die;
+        return energy < 0 || ticksLived > sexualMaturity * 100 || die;
     }
 
     private void RunAway()
@@ -317,19 +322,19 @@ public class BlobBehavior : MonoBehaviour
 
         if (food == null) food = perception.LatestFruit;
 
-        if (perception.LatestBlob != null)
+        if (perception.LatestBlob != null && perception.LatestBlob != this)
         {
             var newBlob = perception.LatestBlob;
             perception.LatestBlob = null;
 
             if (parent != null && (newBlob.Equals(parent) || (newBlob.parent != null && newBlob.parent.Equals(this)))) return;
 
-            if (newBlob.size > size * predationLimit)
+            if (IsPredator(newBlob))
             {
                 predator = newBlob;
                 food = null;
             }
-            else if (newBlob.size < size / predationLimit)
+            else if (IsPrey(newBlob))
             {
                 prey = newBlob;
                 food = null;
@@ -350,6 +355,16 @@ public class BlobBehavior : MonoBehaviour
         }
     }
 
+    private bool IsPredator(BlobBehavior newBlob)
+    {
+        return newBlob.size * newBlob.melee > size * armor * predationLimit;
+    }
+
+    private bool IsPrey(BlobBehavior newBlob)
+    {
+        return newBlob.size * newBlob.armor < size * melee / predationLimit;
+    }
+
     private bool IsRival(BlobBehavior newBlob)
     {
         // must both be male, and need to steal their partner
@@ -365,33 +380,50 @@ public class BlobBehavior : MonoBehaviour
         // girls pick boys unless it's a rivalry
         if ((gender == GenderType.Male || potentialPartner.gender == GenderType.Female) && !checkingRivalry) return false;
 
-        // check size
-        if (potentialPartner.size / size > mateLimit || size / potentialPartner.size > mateLimit) return false;
-
         // both parters should be sexually mature
         if (potentialPartner.ticksLived < potentialPartner.sexualMaturity || ticksLived < sexualMaturity) return false;
-
-        if (REALLY_PICKY_MATE_SELECTION && !IsPickyMateMatch(potentialPartner)) {
-            return false;
-        }
 
         // they're a good match, so assuming we don't already have a partner
         // or this is gen 0 and your partner is yourself (you wierdo...)
         if (partner == null || partner == this) return true;
 
-        return partner.energy / partner.ticksLived < potentialPartner.energy / potentialPartner.ticksLived;
+        if (!(partner.energy / partner.ticksLived < potentialPartner.energy / potentialPartner.ticksLived)) return false;
+
+        var isGoodPartner = IsSameSpecies(potentialPartner, isMateSelection: true);
+
+        if (isGoodPartner)
+        {
+            rejectedMates = 0;
+        }
+        else
+        {
+            rejectedMates++;
+        }
+
+        return isGoodPartner;
     }
 
-    private bool IsPickyMateMatch(BlobBehavior potentialPartner)
+    public bool IsSameSpecies(BlobBehavior potentialPartner, bool isMateSelection = false)
     {
-        if (potentialPartner.speed / speed > mateLimit || speed / potentialPartner.speed > mateLimit) return false;
-        if (potentialPartner.jogModifier / jogModifier > mateLimit || jogModifier / potentialPartner.jogModifier > mateLimit) return false;
-        if (potentialPartner.runModifier / runModifier > mateLimit || runModifier / potentialPartner.runModifier > mateLimit) return false;
-        if (potentialPartner.sexualMaturity / sexualMaturity > mateLimit || sexualMaturity / potentialPartner.sexualMaturity > mateLimit) return false;
-        if (potentialPartner.wantForPrey / wantForPrey > mateLimit || wantForPrey / potentialPartner.wantForPrey > mateLimit) return false;
-        if (potentialPartner.aggression / aggression > mateLimit || aggression / potentialPartner.aggression > mateLimit) return false;
-        if (potentialPartner.carnivorous / carnivorous > mateLimit || carnivorous / potentialPartner.carnivorous > mateLimit) return false;
-        if (potentialPartner.fearOfPredator / fearOfPredator > mateLimit || fearOfPredator / potentialPartner.fearOfPredator > mateLimit) return false;
+        var pickiness = mateLimit;
+
+        if (isMateSelection)
+        {
+             pickiness = mateLimit + (float)rejectedMates * 0.01f;
+        }
+        
+        if (potentialPartner.speed / speed > pickiness || speed / potentialPartner.speed > pickiness) return false;
+        if (potentialPartner.jogModifier / jogModifier > pickiness || jogModifier / potentialPartner.jogModifier > pickiness) return false;
+        if (potentialPartner.runModifier / runModifier > pickiness || runModifier / potentialPartner.runModifier > pickiness) return false;
+        if (potentialPartner.sexualMaturity / sexualMaturity > pickiness || sexualMaturity / potentialPartner.sexualMaturity > pickiness) return false;
+        if (potentialPartner.wantForPrey / wantForPrey > pickiness || wantForPrey / potentialPartner.wantForPrey > pickiness) return false;
+        if (potentialPartner.aggression / aggression > pickiness || aggression / potentialPartner.aggression > pickiness) return false;
+        if (potentialPartner.carnivorous / carnivorous > pickiness || carnivorous / potentialPartner.carnivorous > pickiness) return false;
+        if (potentialPartner.fearOfPredator / fearOfPredator > pickiness || fearOfPredator / potentialPartner.fearOfPredator > pickiness) return false;
+        if (potentialPartner.melee / melee > pickiness || melee / potentialPartner.melee > pickiness) return false;
+        if (potentialPartner.armor / armor > pickiness || armor / potentialPartner.armor > pickiness) return false;
+        if (potentialPartner.size / size > pickiness || size / potentialPartner.size > pickiness) return false;
+
         return true;
     }
 
@@ -477,14 +509,14 @@ public class BlobBehavior : MonoBehaviour
 
         var moveAmount = new Vector3(0, 0, 1).normalized * scaleAdjustedSpeed * Time.deltaTime;
 
-        energy -= (int)(size * size * size * currentSpeed * currentSpeed);
+        energy -= EnergyForMovement();
 
         transform.Translate(moveAmount, Space.Self);
     }
 
-    void FixedUpdate()
+    private int EnergyForMovement()
     {
-        //myRigidBody.position += velocity * Time.fixedDeltaTime;
+        return (int)(size * size * size * currentSpeed * currentSpeed * melee * armor);
     }
 
     void OnTriggerEnter(Collider triggerCollider)

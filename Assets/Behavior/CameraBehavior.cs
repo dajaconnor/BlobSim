@@ -1,4 +1,5 @@
 ﻿using Assets.Enums;
+using Assets.Utils;
 using BlobSimulation.Utils;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ public class CameraBehavior : MonoBehaviour
 {
     public MapGenerator ground;
     public Material perceptionMaterial;
+    public Material treeMaterial;
     public BlobBehavior target;
     public int fruitSpawnRate = 4;
     public ColorDisplayType colorToggle = ColorDisplayType.None;
@@ -17,10 +19,12 @@ public class CameraBehavior : MonoBehaviour
     public bool showStats = false;
     public DisplayType displayType = DisplayType.None;
     int numDigitsAfterPoint = 2;
+    float speciationSample = 0;
 
     // Use this for initialization
     void Start()
     {
+        treeMaterial.color = new Color(treeMaterial.color.r, treeMaterial.color.g, treeMaterial.color.b, 1);
         ground = FindObjectOfType<MapGenerator>();
     }
 
@@ -84,76 +88,81 @@ public class CameraBehavior : MonoBehaviour
         }
         else
         {
-
-
-            switch (displayType)
-            {
-                case DisplayType.None:
-                    break;
-                case DisplayType.Records:
-                    DisplayRecords();
-                    break;
-                case DisplayType.Statistics:
-                    DisplayStatistics();
-                    break;
-            }
+            DisplayRecords(displayType);
         }
     }
 
-    private void DisplayStatistics()
+    private void DisplayRecords(DisplayType displayType)
     {
+        switch (displayType)
+        {
+            case DisplayType.PhysicalRecords:
+                DisplayPhysicalRecords();
+                break;
+            case DisplayType.BehavioralRecords:
+                DisplayBehavioralRecords();
+                break;
+            case DisplayType.ReproductiveRecords:
+                DisplayReproductiveRecords();
+                break;
+        }
+    }
 
+    private void DisplayPhysicalRecords()
+    {
         var stats = ground.GetComponent<Statistics>();
 
-        var thingsToSay = new List<string>
+        DisplayStats(new List<string>
         {
-            stats.numBlobs + " blobs",
+            $"{stats.armor.PrintMinMax(false)} armor",
+            $"{stats.melee.PrintMinMax(false)} melee",
+            $"{stats.size.PrintMinMax(false)} size",
+            $"{stats.speed.PrintMinMax(false)} base speed",
+            $"{stats.jogModifier.PrintMinMax(false)} forage speed",
+            $"{stats.runModifier.PrintMinMax(false)} run speed",
+            $"{stats.rotationSpeed.PrintMinMax(false)} rotation",
+            $"{stats.carnivorous.PrintMinMax(false)} carnivorousness",
+        });
+    }
+
+    private void DisplayBehavioralRecords()
+    {
+        var stats = ground.GetComponent<Statistics>();
+
+        DisplayStats(new List<string>
+        {
+            $"{stats.aggression.PrintMinMax(false)} aggression",
+            $"{stats.wantForPrey.PrintMinMax(false)} want for prey",
+            $"{stats.fearOfPredator.PrintMinMax(false)} fear of predator",
+            $"{stats.randomRotation.PrintMinMax(false)} random rotation",
+            $"{stats.useMemory.PrintMinMax(false)} memory",
+            stats.recordBlobsEaten + " record blobs eaten",
+            stats.recordFruitEaten + " record fruit eaten"
+        });
+    }
+
+
+    private void DisplayReproductiveRecords()
+    {
+        var stats = ground.GetComponent<Statistics>();
+
+        DisplayStats(new List<string>
+        {
+            $"{stats.recordBlobCount} {stats.numBlobs} blobs",
             stats.totalFemales + " females",
-            "Averages",
             ((float)stats.numFruitEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " fruit eaten",
             ((float)stats.numBlobsEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " blobs eaten",
-
-            stats.averageSize.ToString("F" + numDigitsAfterPoint) + " size",
-            stats.averageJogModifier.ToString("F" + numDigitsAfterPoint) + " jog speed",
-            stats.averageRunModifier.ToString("F" + numDigitsAfterPoint) + " run speed",
-            stats.averageRandomRotation.ToString("F" + numDigitsAfterPoint) + " rotation",
-            stats.averageAggression.ToString("F" + numDigitsAfterPoint) + " aggression",
-            stats.averageFearOfPredator.ToString("F" + numDigitsAfterPoint) + " fear",
-            stats.averageWantOfPrey.ToString("F" + numDigitsAfterPoint) + " want",
-            stats.averageIncubationTicks.ToString("F" + numDigitsAfterPoint) + " incubation",
-            stats.averageReproductionLimit.ToString("F0") + " reproduction limit",
-            stats.averageChildrenPerFemale.ToString("F" + numDigitsAfterPoint) + " children",
-            stats.percentFemale.ToString("F" + numDigitsAfterPoint) + "% female"
-        };
-
-        DisplayStats(thingsToSay);
+            stats.percentFemale.ToString("F" + numDigitsAfterPoint) + "% female",
+            $"{stats.sexualMaturity.PrintMinMax(true)} sexual maturity",
+            $"{stats.incubationTicks.PrintMinMax(true)} incubation",
+            $"{stats.reproductionLimit.PrintMinMax(true)} reproduction",
+            stats.recordChildren + " children",
+            $"{speciationSample.ToString("F" + 5)} speciation"
+        });
     }
 
-    private void DisplayRecords()
-    {
-        var stats = ground.GetComponent<Statistics>();
 
-        var thingsToSay = new List<string>
-        {
-            stats.numBlobs + " blobs",
-            "",
-            "Records",
-            stats.recordBlobCount + " blobs",
-            stats.recordBlobsEaten + " blobs eaten",
-            stats.recordFruitEaten + " fruit eaten",
-            stats.recordHighJogModifier + " high jog speed",
-            stats.recordLowJogModifier + " low jog speed",
-            stats.recordHighRunModifier + " high run speed",
-            stats.recordLowRunModifier + " low run speed",
-            stats.recordHighIncubationTicks + " high incubation",
-            stats.recordLowIncubationTicks + " low incubation",
-            stats.recordHighReproductionLimit + " high reproduction limit",
-            stats.recordLowReproductionLimit + " low reproduction limit",
-            stats.recordChildren + " children"
-        };
 
-        DisplayStats(thingsToSay);
-    }
 
     private static void DisplayStats(List<string> thingsToSay)
     {
@@ -181,7 +190,7 @@ public class CameraBehavior : MonoBehaviour
             FollowTarget();
         }
 
-        HandlePerception();
+        HandleTranslucence();
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -196,16 +205,25 @@ public class CameraBehavior : MonoBehaviour
                 switch(displayType)
                 {
                     case DisplayType.None:
-                        displayType = DisplayType.Statistics;
+                        displayType = DisplayType.PhysicalRecords;
                         break;
-                    case DisplayType.Statistics:
-                        displayType = DisplayType.Records;
+                    case DisplayType.PhysicalRecords:
+                        displayType = DisplayType.BehavioralRecords;
                         break;
-                    case DisplayType.Records:
+                    case DisplayType.BehavioralRecords:
+                        displayType = DisplayType.ReproductiveRecords;
+                        speciationSample = ReproductionUtil.SampleSpeciation(10);
+                        break;
+                    case DisplayType.ReproductiveRecords:
                         displayType = DisplayType.None;
                         break;
                 }
             }
+        }
+
+        if (Input.GetKeyDown(KeyCode.BackQuote) && displayType == DisplayType.ReproductiveRecords)
+        {
+            speciationSample = ReproductionUtil.SampleSpeciation(100);
         }
 
         if (Input.GetKey(KeyCode.Comma) && Time.timeScale > 0.05f)
@@ -259,8 +277,16 @@ public class CameraBehavior : MonoBehaviour
         }
     }
 
-    private void HandlePerception()
+    private void HandleTranslucence()
     {
+        if (Input.GetKey(KeyCode.Minus) && treeMaterial.color.a > 0.01)
+        {
+            treeMaterial.color = new Color(treeMaterial.color.r, treeMaterial.color.g, treeMaterial.color.b, treeMaterial.color.a - 0.01f);
+        }
+        if (Input.GetKey(KeyCode.Equals) && treeMaterial.color.a < 1)
+        {
+            treeMaterial.color = new Color(treeMaterial.color.r, treeMaterial.color.g, treeMaterial.color.b, treeMaterial.color.a + 0.01f);
+        }
         if (Input.GetKey(KeyCode.LeftBracket) && perceptionMaterial.color.a > 0.01)
         {
             perceptionMaterial.color = new Color(perceptionMaterial.color.r, perceptionMaterial.color.g, perceptionMaterial.color.b, perceptionMaterial.color.a - 0.01f);

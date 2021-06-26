@@ -16,7 +16,7 @@ public class TreeBehavior : MonoBehaviour
     internal int fastGrowTime = 250;
     internal int mediumGrowTime = 250;
     internal int slowGrowTime = 500;
-    internal float fiberInFruit = 0.01f;
+    internal float fiberInFruit = 0.005f;
     private bool isOnMap = true;
 
     // Start is called before the first frame update

@@ -1,4 +1,5 @@
 ﻿using Assets.Enums;
+using Assets.Models;
 using UnityEngine;
 
 public class Statistics : MonoBehaviour
@@ -10,26 +11,26 @@ public class Statistics : MonoBehaviour
     public int recordBlobsEaten;
     public int numFruitEaten;
     public int recordFruitEaten;
-    public float averageSize;
-    public float averageJogModifier;
-    public float recordHighSize;
-    public float recordLowSize;
-    public float recordHighJogModifier;
-    public float recordLowJogModifier;
-    public float averageRunModifier;
-    public float recordHighRunModifier;
-    public float recordLowRunModifier;
-    public float averageRandomRotation;
-    public float averageAggression;
-    public float averageFearOfPredator;
-    public float averageWantOfPrey;
-    public float averageIncubationTicks;
-    public int recordHighIncubationTicks;
-    public int recordLowIncubationTicks;
-    public float averageReproductionLimit;
-    public int recordHighReproductionLimit;
-    public int recordLowReproductionLimit;
     public int recordChildren;
+
+    public AttributeStatistic jogModifier = new AttributeStatistic();
+    public AttributeStatistic size = new AttributeStatistic();
+    public AttributeStatistic runModifier = new AttributeStatistic();
+    public AttributeStatistic randomRotation = new AttributeStatistic();
+    public AttributeStatistic aggression = new AttributeStatistic();
+    public AttributeStatistic fearOfPredator = new AttributeStatistic();
+    public AttributeStatistic wantForPrey = new AttributeStatistic();
+    public AttributeStatistic incubationTicks = new AttributeStatistic();
+    public AttributeStatistic reproductionLimit = new AttributeStatistic();
+    public AttributeStatistic speed = new AttributeStatistic();
+    public AttributeStatistic armor = new AttributeStatistic();
+    public AttributeStatistic melee = new AttributeStatistic();
+    public AttributeStatistic carnivorous = new AttributeStatistic();
+    public AttributeStatistic sexualMaturity = new AttributeStatistic();
+    public AttributeStatistic useMemory = new AttributeStatistic();
+    public AttributeStatistic rotationSpeed = new AttributeStatistic();
+
+
     internal int totalFemales {
         get;
         set;
@@ -55,25 +56,22 @@ public class Statistics : MonoBehaviour
 
     public void UpdateAverages(BlobBehavior blob, StatType statType)
     {
-        averageSize = CalculateNewAverage(averageSize, blob.size, statType);
-
-        averageJogModifier = CalculateNewAverage(averageJogModifier, blob.jogModifier, statType);
-
-        averageRunModifier = CalculateNewAverage(averageRunModifier, blob.runModifier, statType);
-
-        averageRandomRotation = CalculateNewAverage(averageRandomRotation, blob.randomRotation, statType);
-
-        averageAggression = CalculateNewAverage(averageAggression, blob.aggression, statType);
-
-        averageFearOfPredator = CalculateNewAverage(averageFearOfPredator, blob.fearOfPredator, statType);
-
-        averageWantOfPrey = CalculateNewAverage(averageWantOfPrey, blob.wantForPrey, statType);
-
-        averageIncubationTicks = CalculateNewAverage(averageIncubationTicks, blob.incubationTicks, statType);
-
-        averageReproductionLimit = CalculateNewAverage(averageReproductionLimit, blob.reproductionLimit, statType);
-
-        //percentFemale = CalculateNewAverage(percentFemale, (int)blob.gender, statType);
+        UpdateAverage(size, blob.size, statType);
+        UpdateAverage(jogModifier, blob.jogModifier, statType);
+        UpdateAverage(runModifier, blob.runModifier, statType);
+        UpdateAverage(randomRotation, blob.randomRotation, statType);
+        UpdateAverage(aggression, blob.aggression, statType);
+        UpdateAverage(fearOfPredator, blob.fearOfPredator, statType);
+        UpdateAverage(wantForPrey, blob.wantForPrey, statType);
+        UpdateAverage(incubationTicks, blob.incubationTicks, statType);
+        UpdateAverage(reproductionLimit, blob.reproductionLimit, statType);
+        UpdateAverage(rotationSpeed, blob.rotationSpeed, statType);
+        UpdateAverage(useMemory, blob.useMemoryPercent, statType);
+        UpdateAverage(sexualMaturity, blob.sexualMaturity, statType);
+        UpdateAverage(carnivorous, blob.carnivorous, statType);
+        UpdateAverage(melee, blob.melee, statType);
+        UpdateAverage(armor, blob.armor, statType);
+        UpdateAverage(speed, blob.speed, statType);
 
         if (blob.gender.Equals(GenderType.Female) && statType == StatType.Death) totalChildren -= blob.children; //averageChildrenPerFemale = CalculateChildrenAverage(averageChildrenPerFemale, blob.children, statType);
 
@@ -93,6 +91,13 @@ public class Statistics : MonoBehaviour
         }
     }
 
+    private void UpdateAverage(AttributeStatistic currentStatistic, float addition, StatType stateType)
+    {
+        var sign = stateType.Equals(StatType.Birth) ? 1 : -1;
+
+        currentStatistic.Average = (currentStatistic.Average * numBlobs + addition * sign) / (numBlobs + sign);
+    }
+
     private float CalculateNewAverage(float currentAverage, float addition, StatType stateType)
     {
         var sign = stateType.Equals(StatType.Birth) ? 1 : -1;
@@ -103,8 +108,6 @@ public class Statistics : MonoBehaviour
     // this happens after the new blob is instantiated
     public void UpdateSurvivalStatistics(BlobBehavior blob)
     {
-        BothGenderRecords(blob);
-
         if (recordChildren < blob.children) recordChildren = blob.children;
     }
 
@@ -113,16 +116,22 @@ public class Statistics : MonoBehaviour
         // First time reproducers get to contribute to records
         if (blob.children == 1)
         {
-            if (recordHighIncubationTicks < blob.incubationTicks) recordHighIncubationTicks = blob.incubationTicks;
-            if (recordHighJogModifier < blob.jogModifier) recordHighJogModifier = blob.jogModifier;
-            if (recordHighReproductionLimit < blob.reproductionLimit) recordHighReproductionLimit = blob.reproductionLimit;
-            if (recordHighRunModifier < blob.runModifier) recordHighRunModifier = blob.runModifier;
-            if (recordHighSize < blob.size) recordHighSize = blob.size;
-            if (recordLowIncubationTicks > blob.incubationTicks || recordLowIncubationTicks == 0) recordLowIncubationTicks = blob.incubationTicks;
-            if (recordLowJogModifier > blob.jogModifier || recordLowJogModifier == 0) recordLowJogModifier = blob.jogModifier;
-            if (recordLowReproductionLimit > blob.reproductionLimit || recordLowReproductionLimit == 0) recordLowReproductionLimit = blob.reproductionLimit;
-            if (recordLowRunModifier > blob.runModifier || recordLowRunModifier == 0) recordLowRunModifier = blob.runModifier;
-            if (recordLowSize > blob.size) recordLowSize = blob.size;
+            incubationTicks.UpdateMinMax(blob.incubationTicks);
+            jogModifier.UpdateMinMax(blob.jogModifier);
+            reproductionLimit.UpdateMinMax(blob.reproductionLimit);
+            runModifier.UpdateMinMax(blob.runModifier);
+            size.UpdateMinMax(blob.size);
+            aggression.UpdateMinMax(blob.aggression);
+            armor.UpdateMinMax(blob.armor);
+            melee.UpdateMinMax(blob.melee);
+            carnivorous.UpdateMinMax(blob.carnivorous);
+            randomRotation.UpdateMinMax(blob.randomRotation);
+            speed.UpdateMinMax(blob.speed);
+            sexualMaturity.UpdateMinMax(blob.sexualMaturity);
+            useMemory.UpdateMinMax(blob.useMemoryPercent);
+            wantForPrey.UpdateMinMax(blob.wantForPrey);
+            fearOfPredator.UpdateMinMax(blob.fearOfPredator);
+            rotationSpeed.UpdateMinMax(blob.rotationSpeed);
         }
     }
 }

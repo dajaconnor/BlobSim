@@ -2,6 +2,6 @@
 {
     public enum BlobSpeedType
     {
-        Walking, Jogging, Running
+        Grazing, Walking, Jogging, Running
     }
 }

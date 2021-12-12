@@ -20,7 +20,7 @@ public class FruitBehavior : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (isSterile) return;
+        if (isSterile || Camera.main.GetComponent<CameraBehavior>().paused) return;
 
         age++;
 

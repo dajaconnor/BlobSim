@@ -7,7 +7,6 @@ public class FruitSpawner : MonoBehaviour
 {
 
     public GameObject fruitPrefab;
-    private int initialSpawn = 1000;
     private int ticks = 1;
     private TreeBehavior firstTree;
     private MapGenerator ground;
@@ -19,21 +18,12 @@ public class FruitSpawner : MonoBehaviour
 
         firstTree = FindObjectsOfType<TreeBehavior>().First();
         firstTree.transform.position = new Vector3(firstTree.transform.position.x, LocationUtil.GetHeight(firstTree.transform.position, ground), firstTree.transform.position.z);
-
-        for (var i = 0; i < initialSpawn; i++)
-        {
-            firstTree.DropFruit();
-        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (ticks < 1000)
-        {
-            firstTree.DropFruit();
-            ticks++;
-        }
+        if (Camera.main.GetComponent<CameraBehavior>().paused) return;
 
         if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
         {
@@ -46,6 +36,8 @@ public class FruitSpawner : MonoBehaviour
         }
 
         ticks++;
+
+        if (ticks == int.MaxValue) ticks = 0;
 
         if (Input.GetKeyDown(KeyCode.Minus) && Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate > 1)
         {

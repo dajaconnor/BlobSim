@@ -2,14 +2,14 @@
 {
     public class AttributeStatistic
     {
-        public float Min { get; private set; }
-        public float Max { get; private set; }
+        public float? Min { get; private set; }
+        public float? Max { get; private set; }
         public float Average { get; set; }
 
         public void UpdateMinMax(float newValue)
         {
-            if (newValue < Min || Min == 0) Min = newValue;
-            if (newValue > Max) Max = newValue;
+            if (newValue < Min || Min == null) Min = newValue;
+            if (newValue > Max || Max == null) Max = newValue;
         }
 
         public string PrintMinMax(bool isInt)

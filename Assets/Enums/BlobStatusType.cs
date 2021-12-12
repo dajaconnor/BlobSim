@@ -2,6 +2,6 @@
 {
     public enum BlobStatusType
     {
-        Incubating, Fleeing, Fighting, Providing, Chasing, Foraging, Wandering
+        Incubating, Fleeing, Fighting, Providing, Chasing, Foraging, Wandering, Grazing, Dead, Scavenging
     }
 }

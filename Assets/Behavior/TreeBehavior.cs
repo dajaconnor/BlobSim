@@ -32,6 +32,8 @@ public class TreeBehavior : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Camera.main.GetComponent<CameraBehavior>().paused) return;
+
         if (age < fastGrowTime) Grow();
         else if (age < fastGrowTime + mediumGrowTime)
         {

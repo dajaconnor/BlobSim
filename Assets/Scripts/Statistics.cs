@@ -29,6 +29,8 @@ public class Statistics : MonoBehaviour
     public AttributeStatistic sexualMaturity = new AttributeStatistic();
     public AttributeStatistic useMemory = new AttributeStatistic();
     public AttributeStatistic rotationSpeed = new AttributeStatistic();
+    public AttributeStatistic maleMonogomy = new AttributeStatistic();
+    public AttributeStatistic femaleMonogomy = new AttributeStatistic();
 
 
     internal int totalFemales {
@@ -73,6 +75,16 @@ public class Statistics : MonoBehaviour
         UpdateAverage(armor, blob.armor, statType);
         UpdateAverage(speed, blob.speed, statType);
 
+        if (blob.gender.Equals(GenderType.Female))
+        {
+            UpdateGenderedAverage(femaleMonogomy, blob.monogomy, statType, GenderType.Female);
+        }
+        else
+        {
+            UpdateGenderedAverage(maleMonogomy, blob.monogomy, statType, GenderType.Male);
+        }
+        
+
         if (blob.gender.Equals(GenderType.Female) && statType == StatType.Death) totalChildren -= blob.children; //averageChildrenPerFemale = CalculateChildrenAverage(averageChildrenPerFemale, blob.children, statType);
 
         numFruitEaten -= blob.fruitEaten;
@@ -98,11 +110,15 @@ public class Statistics : MonoBehaviour
         currentStatistic.Average = (currentStatistic.Average * numBlobs + addition * sign) / (numBlobs + sign);
     }
 
-    private float CalculateNewAverage(float currentAverage, float addition, StatType stateType)
+    private void UpdateGenderedAverage(AttributeStatistic currentStatistic, float addition, StatType stateType, GenderType gender)
     {
         var sign = stateType.Equals(StatType.Birth) ? 1 : -1;
 
-        return (currentAverage * numBlobs + addition * sign) / (numBlobs + sign);
+        var numberOfGender = totalFemales;
+
+        if (gender.Equals(GenderType.Male)) numberOfGender = numBlobs - totalFemales;
+
+        currentStatistic.Average = (currentStatistic.Average * numberOfGender + addition * sign) / (numberOfGender + sign);
     }
 
     // this happens after the new blob is instantiated
@@ -132,6 +148,8 @@ public class Statistics : MonoBehaviour
             wantForPrey.UpdateMinMax(blob.wantForPrey);
             fearOfPredator.UpdateMinMax(blob.fearOfPredator);
             rotationSpeed.UpdateMinMax(blob.rotationSpeed);
+            if (blob.gender.Equals(GenderType.Female)) femaleMonogomy.UpdateMinMax(blob.monogomy);
+            else maleMonogomy.UpdateMinMax(blob.monogomy);
         }
     }
 }

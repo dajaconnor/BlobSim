@@ -13,6 +13,7 @@ public class CameraBehavior : MonoBehaviour
     public BlobBehavior target;
     public int fruitSpawnRate = 4;
     public ColorDisplayType colorToggle = ColorDisplayType.None;
+    public bool paused = false;
 
     float amount;
     float distanceToTarget = 10;
@@ -31,9 +32,7 @@ public class CameraBehavior : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
         UserControl();
-
     }
 
     void OnGUI()
@@ -136,6 +135,8 @@ public class CameraBehavior : MonoBehaviour
             $"{stats.fearOfPredator.PrintMinMax(false)} fear of predator",
             $"{stats.randomRotation.PrintMinMax(false)} random rotation",
             $"{stats.useMemory.PrintMinMax(false)} memory",
+            $"{stats.maleMonogomy.PrintMinMax(false)} male monogomy",
+            $"{stats.femaleMonogomy.PrintMinMax(false)} female monogomy",
             stats.recordBlobsEaten + " record blobs eaten",
             stats.recordFruitEaten + " record fruit eaten"
         });
@@ -191,6 +192,11 @@ public class CameraBehavior : MonoBehaviour
         }
 
         HandleTranslucence();
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            paused = !paused;
+        }
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {

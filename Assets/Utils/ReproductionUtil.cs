@@ -1,5 +1,6 @@
 ﻿using Assets.Enums;
 using BlobSimulation.Utils;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -44,12 +45,12 @@ namespace Assets.Utils
             mother.children++;
 
             // Because of starting positions.  Don't judgde me.
-            if (mother != mother.partner) mother.partner.children++;
+            if (mother != mother.currentPartner) mother.currentPartner.children++;
             mother.energy /= 3;
 
 
             var stats = mother.ground.GetComponent<Statistics>();
-            stats.BothGenderRecords(mother.partner);
+            stats.BothGenderRecords(mother.currentPartner);
             stats.BothGenderRecords(mother);
             stats.UpdateSurvivalStatistics(mother);
             stats.UpdateAverages(newBlob, StatType.Birth);
@@ -124,8 +125,13 @@ namespace Assets.Utils
             newBlob.melee = MeOrMate(mother).melee * GetDrift();
             newBlob.armor = MeOrMate(mother).armor * GetDrift();
 
+            newBlob.monogomy = SameSexParent(mother, newBlob.gender).monogomy * GetDrift();
+            newBlob.isMonogomous = newBlob.monogomy > 0.5f;
+
+            if (!newBlob.isMonogomous) newBlob.selectedPartners = new HashSet<BlobBehavior>();
+
             if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
-            else newBlob.sexualMaturity = (int)(mother.partner.sexualMaturity * GetDrift());
+            else newBlob.sexualMaturity = (int)(mother.currentPartner.sexualMaturity * GetDrift());
         }
 
         private static GenderType RandomGender(BlobBehavior mother)
@@ -137,7 +143,13 @@ namespace Assets.Utils
         private static BlobBehavior MeOrMate(BlobBehavior mother)
         {
             if (Random.value < 0.5f) return mother;
-            else return mother.partner;
+            else return mother.currentPartner;
+        }
+
+        private static BlobBehavior SameSexParent(BlobBehavior mother, GenderType gender)
+        {
+            if (gender == GenderType.Female) return mother;
+            else return mother.currentPartner;
         }
 
         private static void SetPerceptionFields(BlobBehavior mother, BlobBehavior newBlob)

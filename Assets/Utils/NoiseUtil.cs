@@ -8,13 +8,13 @@ namespace Assets.Utils
         {
             var map = new float[mapWidth, mapDepth];
 
-            var prng = new System.Random(seed);
+            var seededRandom = new System.Random(seed);
             var octaveOffsets = new Vector2[octaves];
 
             for (int i = 0; i< octaves; i++)
             {
-                var offsetX = prng.Next(-100000, 100000) + offset.x;
-                var offsetY = prng.Next(-100000, 100000) + offset.y;
+                var offsetX = seededRandom.Next(-100000, 100000) + offset.x;
+                var offsetY = seededRandom.Next(-100000, 100000) + offset.y;
                 octaveOffsets[i] = new Vector2(offsetX, offsetY);
             }
 

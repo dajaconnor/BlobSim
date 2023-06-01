@@ -102,7 +102,7 @@ public class BlobBehavior : MonoBehaviour
     BlobBehavior prey;
     internal BlobBehavior parent;
     BlobBehavior rival;
-    public HashSet<BlobBehavior> selectedPartners;
+    public HashSet<BlobBehavior> selectedPartners = new HashSet<BlobBehavior>();
     public BlobBehavior currentPartner;
 
     internal int currentIncubation = 0;
@@ -158,6 +158,8 @@ public class BlobBehavior : MonoBehaviour
             var stats = ground.GetComponent<Statistics>();
 
             stats.UpdateAverages(this, StatType.Birth);
+
+            SetBlobToGroundHeight();
         }
 
         if (generation < 2) currentPartner = this;
@@ -201,7 +203,7 @@ public class BlobBehavior : MonoBehaviour
         SetStatus();
         Act();
 
-        FixHeightBug();
+        SetBlobToGroundHeight();
     }
 
     private void Act()
@@ -233,8 +235,11 @@ public class BlobBehavior : MonoBehaviour
             case BlobStatusType.Foraging:
             case BlobStatusType.Scavenging:
 
-                SlowToTarget(food.transform.position);
+                if (food == null){
+                    goto case BlobStatusType.Wandering;
+                }
 
+                SlowToTarget(food.transform.position);
                 HeadToTarget(food.transform.position);
 
                 break;
@@ -277,7 +282,7 @@ public class BlobBehavior : MonoBehaviour
     {
         var distanceToTarget = Vector3.Distance(targetPosition, transform.position);
 
-        if (distanceToTarget < 5 * ground.scale)
+        if (distanceToTarget < 5)
         {
             currentSpeed /= 2;
         }
@@ -361,7 +366,7 @@ public class BlobBehavior : MonoBehaviour
         return gender.Equals(GenderType.Male) 
             && IsMonogomous()
             && energy > reserveEnergy * 2 
-            && currentPartner.currentPartner.Equals(this)
+            && currentPartner.currentPartner == this
             && currentPartner != this
             && !currentPartner.ShouldReproduce();
     }
@@ -392,7 +397,7 @@ public class BlobBehavior : MonoBehaviour
         return (currentPartner != null && ticksLived > sexualMaturity && (energy > reproductionLimit || currentIncubation > 0));
     }
 
-    private void FixHeightBug()
+    private void SetBlobToGroundHeight()
     {
         transform.position = new Vector3(transform.position.x, LocationUtil.GetHeight(transform.position, ground) + heightAdjust, transform.position.z);
     }
@@ -418,7 +423,7 @@ public class BlobBehavior : MonoBehaviour
     {
         energy -= (int)(perceptionWidth * perceptionDepth);
 
-        if (food == null) food = perception.LatestFruit;
+        if (food == null && perception.LatestFruit != null) food = perception.LatestFruit;
 
         if (perception.LatestBlob != null && perception.LatestBlob != this)
         {
@@ -608,7 +613,7 @@ public class BlobBehavior : MonoBehaviour
 
         var lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * currentRotationSpeed);
-        energy -= (int)(mass * currentRotationSpeed * currentRotationSpeed);
+        energy -= (int)(mass * currentRotationSpeed * currentRotationSpeed / ground.scale);
     }
 
     private Vector3 DirectionToTarget(Vector3 targetPosition)
@@ -623,11 +628,10 @@ public class BlobBehavior : MonoBehaviour
         if (Random.Range(0f, 1f) < 0.1)
         {
             Vector2 random2DPoint = Random.insideUnitCircle;
-            Vector3 direction = new Vector3(random2DPoint.x, 0, random2DPoint.y).normalized;
+            Vector3 locationToHeadTo = new Vector3(random2DPoint.x, 0, random2DPoint.y).normalized;
 
-            var lookRotation = Quaternion.LookRotation(direction);
+            var lookRotation = Quaternion.LookRotation(locationToHeadTo);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * currentRotationSpeed / randomRotation);
-
         }
     }
 
@@ -660,9 +664,7 @@ public class BlobBehavior : MonoBehaviour
 
     private void MoveForward()
     {
-        var scaleAdjustedSpeed = currentSpeed * ground.scale;
-
-        var moveAmount = new Vector3(0, 0, 1).normalized * scaleAdjustedSpeed * Time.deltaTime;
+        var moveAmount = new Vector3(0, 0, 1).normalized * currentSpeed * Time.deltaTime;
 
         energy -= EnergyForMovement();
 
@@ -734,12 +736,6 @@ public class BlobBehavior : MonoBehaviour
             if (stats.recordBlobsEaten < blobsEaten) stats.recordBlobsEaten = blobsEaten;
 
             RememberThisPlace();
-
-            if (prey.status.Equals(BlobStatusType.Dead))
-            {
-                Destroy(prey.gameObject);
-                Destroy(prey);
-            }
 
             return;
         }

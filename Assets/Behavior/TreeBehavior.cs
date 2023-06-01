@@ -105,7 +105,7 @@ public class TreeBehavior : MonoBehaviour
 
     private void Grow()
     {
-        transform.localScale += new Vector3(growthRate, growthRate, growthRate) * Object.FindObjectOfType<MapGenerator>().scale;
+        transform.localScale += new Vector3(growthRate, growthRate, growthRate);
 
         if (IsOverlappingClosestTree())
         {
@@ -131,7 +131,7 @@ public class TreeBehavior : MonoBehaviour
         if (closestTree == null) return false;
 
         var distance = DistanceTo(this, closestTree);
-        var shadeRadius = transform.localScale.x * 10 * ground.scale;
+        var shadeRadius = transform.localScale.x * 10;
 
         return closestTree != null && distance < shadeRadius;
     }

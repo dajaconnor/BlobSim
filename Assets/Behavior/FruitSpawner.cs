@@ -27,6 +27,7 @@ public class FruitSpawner : MonoBehaviour
 
         if (ticks % Camera.main.GetComponent<CameraBehavior>().fruitSpawnRate == 0)
         {
+
             SpawnRandomFruit();
         }
 

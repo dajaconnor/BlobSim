@@ -12,7 +12,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: DefaultCompany
-  productName: BlobSimulation
+  productName: UnitSimulation
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -560,14 +560,14 @@ PlayerSettings:
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: BlobSimulation
+  metroPackageName: UnitSimulation
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: BlobSimulation
+  metroApplicationDescription: UnitSimulation
   wsaImages: {}
   metroTileShortName: 
   metroCommandLineArgsFile: 
@@ -638,7 +638,7 @@ PlayerSettings:
   facebookSdkVersion: 7.9.4
   apiCompatibilityLevel: 2
   cloudProjectId: e4540ba1-6489-4b67-b911-521dad435c80
-  projectName: BlobSimulation
+  projectName: UnitSimulation
   organizationId: 6753fc1-b318-4fa2-9a85-675312a7c660
   cloudEnabled: 0
   enableNativePlatformBackendsForNewInputSystem: 0

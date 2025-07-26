@@ -1,6 +1,6 @@
 ﻿namespace Assets.Enums
 {
-    public enum BlobSpeedType
+    public enum UnitSpeedType
     {
         Grazing, Walking, Jogging, Running
     }

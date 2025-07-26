@@ -4,7 +4,7 @@ public class PerceptionBehavior : MonoBehaviour
 {
 
     public GameObject LatestFruit;
-    public BlobBehavior LatestBlob;
+    public UnitBehavior LatestUnit;
 
     void OnTriggerEnter(Collider triggerCollider)
     {
@@ -16,12 +16,12 @@ public class PerceptionBehavior : MonoBehaviour
 
         if (triggerCollider.gameObject.name.StartsWith("Percepticon"))
         {
-            LatestBlob = triggerCollider.gameObject.GetComponentInParent<BlobBehavior>();
+            LatestUnit = triggerCollider.gameObject.GetComponentInParent<UnitBehavior>();
         }
     }
 
     void OnMouseDown()
     {
-        Camera.main.GetComponent<CameraBehavior>().target = GetComponentInParent<BlobBehavior>();
+        Camera.main.GetComponent<CameraBehavior>().target = GetComponentInParent<UnitBehavior>();
     }
 }

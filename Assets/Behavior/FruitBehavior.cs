@@ -1,6 +1,6 @@
 ﻿using Assets;
 using Assets.Utils;
-using BlobSimulation.Utils;
+using UnitSimulation.Utils;
 using UnityEngine;
 
 public class FruitBehavior : MonoBehaviour

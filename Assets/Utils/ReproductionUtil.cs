@@ -1,5 +1,5 @@
 ﻿using Assets.Enums;
-using BlobSimulation.Utils;
+using UnitSimulation.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,34 +11,34 @@ namespace Assets.Utils
     {
         private static float geneticDrift = 0.1f;
 
-        public static void ReproduceBlob(BlobBehavior mother, GameObject gameObject, MapGenerator map)
+        public static void ReproduceUnit(UnitBehavior mother, GameObject gameObject, MapGenerator map)
         {
-            BlobBehavior newBlob = gameObject.GetComponent<BlobBehavior>();
-            newBlob.generation = mother.generation + 1;
+            UnitBehavior newUnit = gameObject.GetComponent<UnitBehavior>();
+            newUnit.generation = mother.generation + 1;
 
-            newBlob.Start();
+            newUnit.Start();
 
-            newBlob.transform.position = new Vector3(mother.transform.position.x, LocationUtil.GetHeight(mother.transform.position, map) + BlobBehavior.heightAdjust, mother.transform.position.z);
+            newUnit.transform.position = new Vector3(mother.transform.position.x, LocationUtil.GetHeight(mother.transform.position, map) + UnitBehavior.heightAdjust, mother.transform.position.z);
 
-            newBlob.size = SetNewBlobSize(MeOrMate(mother), gameObject);
+            newUnit.size = SetNewUnitSize(MeOrMate(mother), gameObject);
 
             // compensate for size of baby
-            mother.energy += (int) (100000 * (mother.size - newBlob.size));
+            mother.energy += (int) (100000 * (mother.size - newUnit.size));
 
-            RandomizeTraits(mother, newBlob);
+            RandomizeTraits(mother, newUnit);
 
-            newBlob.rotationSpeed /= newBlob.size * newBlob.size;
-            newBlob.ground = mother.ground;
-            newBlob.blobPrefab = mother.blobPrefab;
-            newBlob.places = (Vector2[]) mother.places.Clone();
-            newBlob.latestPlace = mother.latestPlace;
+            newUnit.rotationSpeed /= newUnit.size * newUnit.size;
+            newUnit.ground = mother.ground;
+            newUnit.blobPrefab = mother.blobPrefab;
+            newUnit.places = (Vector2[]) mother.places.Clone();
+            newUnit.latestPlace = mother.latestPlace;
 
-            newBlob.energy = mother.incubatedEnergy;
+            newUnit.energy = mother.incubatedEnergy;
 
-            newBlob.gender = RandomGender(mother);
+            newUnit.gender = RandomGender(mother);
 
-            newBlob.name = newBlob.gender.ToString() + "Blob";
-            newBlob.parent = mother;
+            newUnit.name = newUnit.gender.ToString() + "Unit";
+            newUnit.parent = mother;
 
             mother.incubatedEnergy = 0;
             mother.currentIncubation = 0;
@@ -53,7 +53,7 @@ namespace Assets.Utils
             stats.BothGenderRecords(mother.currentPartner);
             stats.BothGenderRecords(mother);
             stats.UpdateSurvivalStatistics(mother);
-            stats.UpdateAverages(newBlob, StatType.Birth);
+            stats.UpdateAverages(newUnit, StatType.Birth);
         }
 
         public static void GerminateTree(TreeGenes genes, Vector3 position, GameObject gameObject, GameObject fruitPrefab, MapGenerator map)
@@ -76,100 +76,100 @@ namespace Assets.Utils
 
         public static float SampleSpeciation(int sampleSize)
         {
-            var allBlobs = Object.FindObjectsOfType<BlobBehavior>();
-            var sampleBlobs = allBlobs;
+            var allUnits = Object.FindObjectsOfType<UnitBehavior>();
+            var sampleUnits = allUnits;
 
-            if (sampleSize < allBlobs.Length)
+            if (sampleSize < allUnits.Length)
             {
                 var random = new System.Random();
 
-                sampleBlobs = allBlobs.OrderBy(x => random.Next()).Take(sampleSize).ToArray();
+                sampleUnits = allUnits.OrderBy(x => random.Next()).Take(sampleSize).ToArray();
             }
             else
             {
-                sampleSize = allBlobs.Length;
+                sampleSize = allUnits.Length;
             }
 
 
-            var viableBlobs = 0;
+            var viableUnits = 0;
 
-            foreach(var blob in allBlobs)
+            foreach(var blob in allUnits)
             {
-                foreach(var sampleBlob in sampleBlobs)
+                foreach(var sampleUnit in sampleUnits)
                 {
-                    if (blob != sampleBlob && blob.IsSameSpecies(sampleBlob)) viableBlobs++;
+                    if (blob != sampleUnit && blob.IsSameSpecies(sampleUnit)) viableUnits++;
                 }
             }
 
-            return (float) viableBlobs / (allBlobs.Length * sampleSize);
+            return (float) viableUnits / (allUnits.Length * sampleSize);
         }
 
-        private static void RandomizeTraits(BlobBehavior mother, BlobBehavior newBlob)
+        private static void RandomizeTraits(UnitBehavior mother, UnitBehavior newUnit)
         {
-            SetPerceptionFields(mother, newBlob);
-            newBlob.randomRotation = MeOrMate(mother).randomRotation * GetDrift();
-            newBlob.aggression = MeOrMate(mother).aggression * GetDrift();
-            newBlob.speed = MeOrMate(mother).speed * GetDrift();
-            newBlob.jogModifier = MeOrMate(mother).jogModifier * GetDrift();
-            newBlob.runModifier = MeOrMate(mother).runModifier * GetDrift();
-            newBlob.fearOfPredator = MeOrMate(mother).fearOfPredator * GetDrift();
-            newBlob.wantForPrey = MeOrMate(mother).wantForPrey * GetDrift();
-            newBlob.childGenderRatio = MeOrMate(mother).childGenderRatio * GetDrift();
-            newBlob.incubationTicks = (int)(mother.incubationTicks * GetDrift());
-            newBlob.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
-            newBlob.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
-            newBlob.reserveEnergy = (int)(MeOrMate(mother).reserveEnergy * GetDrift());
-            newBlob.jogRotationModifier = MeOrMate(mother).jogRotationModifier * GetDrift();
-            newBlob.runRotationModifier = MeOrMate(mother).runRotationModifier * GetDrift();
-            newBlob.carnivorous = MeOrMate(mother).carnivorous * GetDrift();
-            newBlob.melee = MeOrMate(mother).melee * GetDrift();
-            newBlob.armor = MeOrMate(mother).armor * GetDrift();
+            SetPerceptionFields(mother, newUnit);
+            newUnit.randomRotation = MeOrMate(mother).randomRotation * GetDrift();
+            newUnit.aggression = MeOrMate(mother).aggression * GetDrift();
+            newUnit.speed = MeOrMate(mother).speed * GetDrift();
+            newUnit.jogModifier = MeOrMate(mother).jogModifier * GetDrift();
+            newUnit.runModifier = MeOrMate(mother).runModifier * GetDrift();
+            newUnit.fearOfPredator = MeOrMate(mother).fearOfPredator * GetDrift();
+            newUnit.wantForPrey = MeOrMate(mother).wantForPrey * GetDrift();
+            newUnit.childGenderRatio = MeOrMate(mother).childGenderRatio * GetDrift();
+            newUnit.incubationTicks = (int)(mother.incubationTicks * GetDrift());
+            newUnit.reproductionLimit = (int)(mother.reproductionLimit * GetDrift());
+            newUnit.useMemoryPercent = MeOrMate(mother).useMemoryPercent * GetDrift();
+            newUnit.reserveEnergy = (int)(MeOrMate(mother).reserveEnergy * GetDrift());
+            newUnit.jogRotationModifier = MeOrMate(mother).jogRotationModifier * GetDrift();
+            newUnit.runRotationModifier = MeOrMate(mother).runRotationModifier * GetDrift();
+            newUnit.carnivorous = MeOrMate(mother).carnivorous * GetDrift();
+            newUnit.melee = MeOrMate(mother).melee * GetDrift();
+            newUnit.armor = MeOrMate(mother).armor * GetDrift();
 
-            newBlob.monogomy = SameSexParent(mother, newBlob.gender).monogomy * GetDrift();
-            newBlob.isMonogomous = newBlob.monogomy > 0.5f;
+            newUnit.monogomy = SameSexParent(mother, newUnit.gender).monogomy * GetDrift();
+            newUnit.isMonogomous = newUnit.monogomy > 0.5f;
 
-            if (!newBlob.isMonogomous) newBlob.selectedPartners = new HashSet<BlobBehavior>();
+            if (!newUnit.isMonogomous) newUnit.selectedPartners = new HashSet<UnitBehavior>();
 
-            if (newBlob.gender.Equals(GenderType.Female)) newBlob.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
-            else newBlob.sexualMaturity = (int)(mother.currentPartner.sexualMaturity * GetDrift());
+            if (newUnit.gender.Equals(GenderType.Female)) newUnit.sexualMaturity = (int)(mother.sexualMaturity * GetDrift());
+            else newUnit.sexualMaturity = (int)(mother.currentPartner.sexualMaturity * GetDrift());
         }
 
-        private static GenderType RandomGender(BlobBehavior mother)
+        private static GenderType RandomGender(UnitBehavior mother)
         {
             if (Random.value < mother.childGenderRatio) return GenderType.Female;
             else return GenderType.Male;
         }
 
-        private static BlobBehavior MeOrMate(BlobBehavior mother)
+        private static UnitBehavior MeOrMate(UnitBehavior mother)
         {
             if (Random.value < 0.5f) return mother;
             else return mother.currentPartner;
         }
 
-        private static BlobBehavior SameSexParent(BlobBehavior mother, GenderType gender)
+        private static UnitBehavior SameSexParent(UnitBehavior mother, GenderType gender)
         {
             if (gender == GenderType.Female) return mother;
             else return mother.currentPartner;
         }
 
-        private static void SetPerceptionFields(BlobBehavior mother, BlobBehavior newBlob)
+        private static void SetPerceptionFields(UnitBehavior mother, UnitBehavior newUnit)
         {
             var parent = MeOrMate(mother);
 
-            var perceptionTransform = newBlob.perception.gameObject.transform;
+            var perceptionTransform = newUnit.perception.gameObject.transform;
 
-            newBlob.perceptionDepth = parent.perceptionDepth * GetDrift();
-            newBlob.perceptionWidth = parent.perceptionWidth * GetDrift();
+            newUnit.perceptionDepth = parent.perceptionDepth * GetDrift();
+            newUnit.perceptionWidth = parent.perceptionWidth * GetDrift();
 
             // to keep from stagnating at 0
-            newBlob.perceptionShift = parent.perceptionShift + (GetDrift() - 0.999f);
+            newUnit.perceptionShift = parent.perceptionShift + (GetDrift() - 0.999f);
 
-            perceptionTransform.localScale = new Vector3(newBlob.perceptionWidth, newBlob.perceptionWidth, newBlob.perceptionDepth);
+            perceptionTransform.localScale = new Vector3(newUnit.perceptionWidth, newUnit.perceptionWidth, newUnit.perceptionDepth);
 
-            perceptionTransform.localPosition = new Vector3(0, 0, perceptionTransform.localScale.z * newBlob.perceptionShift);
+            perceptionTransform.localPosition = new Vector3(0, 0, perceptionTransform.localScale.z * newUnit.perceptionShift);
         }
 
-        private static float SetNewBlobSize(BlobBehavior parent, GameObject gameObject)
+        private static float SetNewUnitSize(UnitBehavior parent, GameObject gameObject)
         {
             var sizeModifier = GetDrift();
             gameObject.transform.localScale *= sizeModifier;

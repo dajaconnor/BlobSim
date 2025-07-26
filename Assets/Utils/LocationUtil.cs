@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace BlobSimulation.Utils
+namespace UnitSimulation.Utils
 {
     public static class LocationUtil
     {

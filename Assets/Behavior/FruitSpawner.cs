@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using BlobSimulation.Utils;
+using UnitSimulation.Utils;
 using Random = UnityEngine.Random;
 using System.Linq;
 

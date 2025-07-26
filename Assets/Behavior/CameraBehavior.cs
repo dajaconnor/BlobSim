@@ -1,6 +1,6 @@
 ﻿using Assets.Enums;
 using Assets.Utils;
-using BlobSimulation.Utils;
+using UnitSimulation.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,7 +10,7 @@ public class CameraBehavior : MonoBehaviour
     public MapGenerator ground;
     public Material perceptionMaterial;
     public Material treeMaterial;
-    public BlobBehavior target;
+    public UnitBehavior target;
     public int fruitSpawnRate = 4;
     public ColorDisplayType colorToggle = ColorDisplayType.None;
     public bool paused = false;
@@ -56,7 +56,7 @@ public class CameraBehavior : MonoBehaviour
                         target.fruitEaten + " fruit found",
                         target.energyFromFruit + " energy from fruit",
                         target.blobsEaten + " blobs cannibalized",
-                        target.energyFromBlobs + " energy from blobs",
+                        target.energyFromUnits + " energy from blobs",
                         timeString + " lived",
                         target.size.ToString("F" + numDigitsAfterPoint) + " size",
                         target.useMemoryPercent.ToString("F" + numDigitsAfterPoint) + " memory",
@@ -137,7 +137,7 @@ public class CameraBehavior : MonoBehaviour
             $"{stats.useMemory.PrintMinMax(false)} memory",
             $"{stats.maleMonogomy.PrintMinMax(false)} male monogomy",
             $"{stats.femaleMonogomy.PrintMinMax(false)} female monogomy",
-            stats.recordBlobsEaten + " record blobs eaten",
+            stats.recordUnitsEaten + " record blobs eaten",
             stats.recordFruitEaten + " record fruit eaten"
         });
     }
@@ -149,10 +149,10 @@ public class CameraBehavior : MonoBehaviour
 
         DisplayStats(new List<string>
         {
-            $"{stats.recordBlobCount} {stats.numBlobs} blobs",
+            $"{stats.recordUnitCount} {stats.numUnits} blobs",
             stats.totalFemales + " females",
-            ((float)stats.numFruitEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " fruit eaten",
-            ((float)stats.numBlobsEaten / stats.numBlobs).ToString("F" + numDigitsAfterPoint) + " blobs eaten",
+            ((float)stats.numFruitEaten / stats.numUnits).ToString("F" + numDigitsAfterPoint) + " fruit eaten",
+            ((float)stats.numUnitsEaten / stats.numUnits).ToString("F" + numDigitsAfterPoint) + " blobs eaten",
             stats.percentFemale.ToString("F" + numDigitsAfterPoint) + "% female",
             $"{stats.sexualMaturity.PrintMinMax(true)} sexual maturity",
             $"{stats.incubationTicks.PrintMinMax(true)} incubation",
